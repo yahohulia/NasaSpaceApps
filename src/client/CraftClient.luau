@@ -187,7 +187,12 @@ function CraftClient.start()
 		local parts = {
 			t("craft.hud.bag", { n = num(player, "BagSamples"), max = CraftConfig.BagSize }),
 			t("craft.hud.parts", { n = num(player, "CarryParts") }),
-			t("craft.hud.store", { iron = num(store, "Iron"), parts = num(store, "Parts") }),
+			t("craft.hud.store", {
+				iron = num(store, "Iron"),
+				nickel = num(store, "Nickel"),
+				manganese = num(store, "Manganese"),
+				parts = num(store, "Parts"),
+			}),
 		}
 		if player:GetAttribute("CarryingDrill") == true then
 			table.insert(parts, t("craft.hud.carry"))
@@ -199,7 +204,7 @@ function CraftClient.start()
 	for _, key in { "BagSamples", "CarryParts", "CarryingDrill" } do
 		player:GetAttributeChangedSignal(key):Connect(render)
 	end
-	for _, key in { "Iron", "Parts" } do
+	for _, key in { "Iron", "Nickel", "Manganese", "Parts" } do
 		store:GetAttributeChangedSignal(key):Connect(render)
 	end
 	render()

@@ -103,8 +103,13 @@ local function bindSample(sample: Instance)
 		return
 	end
 	local key = if sample:GetAttribute("Large") == true then "Large" else kind
-	local prompt =
-		makePrompt(part, "CraftPrompt", text("craft.prompt.pickup"), text("craft.object.sample"), CraftConfig.Hold.Pickup)
+	local prompt = makePrompt(
+		part,
+		"CraftPrompt",
+		text("craft.prompt.pickup"),
+		text("craft.object.sample"),
+		CraftConfig.Hold.Pickup
+	)
 	prompt.Triggered:Connect(function(player)
 		if sample:GetAttribute("Collected") == true then
 			return
@@ -177,29 +182,48 @@ local function sortFor(player: Player)
 		notify:FireClient(player, "craft.toast.nothing")
 		return
 	end
-	local iron, rocks = 0, 0
+	local got: { [string]: number } = {}
+	for _, metal in CraftConfig.Metals do
+		got[metal] = 0
+	end
+	local rocks = 0
 	for kind, count in bag do
-		iron += (CraftConfig.IronYield[kind] or 0) * count
+		for metal, amount in CraftConfig.Yield[kind] or {} do
+			got[metal] = (got[metal] or 0) + amount * count
+		end
 		if kind == "Rock" then
 			rocks += count
 		end
 	end
-	store:SetAttribute("Iron", num(store, "Iron") + iron)
+	for metal, amount in got do
+		store:SetAttribute(metal, num(store, metal) + amount)
+	end
 	store:SetAttribute("Rocks", num(store, "Rocks") + rocks)
 	store:SetAttribute("Parts", num(store, "Parts") + parts)
 	bags[player] = {}
 	bagFolder(player):ClearAllChildren()
 	player:SetAttribute("BagSamples", 0)
 	player:SetAttribute("CarryParts", 0)
-	notify:FireClient(player, "craft.toast.sorted", { iron = iron, rocks = rocks, parts = parts })
+	notify:FireClient(player, "craft.toast.sorted", {
+		iron = got.Iron or 0,
+		nickel = got.Nickel or 0,
+		manganese = got.Manganese or 0,
+		rocks = rocks,
+		parts = parts,
+	})
 end
 
 local function bindSortStation(inst: Instance)
 	if not inst:IsA("BasePart") or inst:FindFirstChild("CraftPrompt") then
 		return
 	end
-	local prompt =
-		makePrompt(inst, "CraftPrompt", text("craft.prompt.sort"), text("craft.object.sortTable"), CraftConfig.Hold.Sort)
+	local prompt = makePrompt(
+		inst,
+		"CraftPrompt",
+		text("craft.prompt.sort"),
+		text("craft.object.sortTable"),
+		CraftConfig.Hold.Sort
+	)
 	prompt.Triggered:Connect(sortFor)
 end
 
@@ -313,8 +337,13 @@ local function bindSite(inst: Instance)
 		onCraft(site, player)
 	end)
 	craftPrompts[site] = craft
-	local pack =
-		makePrompt(site, "CraftPackPrompt", text("craft.prompt.pack"), text("craft.object.drill"), CraftConfig.Hold.Pack)
+	local pack = makePrompt(
+		site,
+		"CraftPackPrompt",
+		text("craft.prompt.pack"),
+		text("craft.object.drill"),
+		CraftConfig.Hold.Pack
+	)
 	pack.KeyboardKeyCode = Enum.KeyCode.F
 	pack.UIOffset = Vector2.new(0, 70)
 	pack.Triggered:Connect(function(player)
@@ -358,7 +387,7 @@ function Crafting.start()
 		state.Parent = ReplicatedStorage
 	end
 	store = state :: Instance
-	for _, key in { "Iron", "Rocks", "Parts" } do
+	for _, key in { "Iron", "Nickel", "Manganese", "Rocks", "Parts" } do
 		if store:GetAttribute(key) == nil then
 			store:SetAttribute(key, 0)
 		end
