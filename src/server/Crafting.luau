@@ -65,6 +65,29 @@ end
 
 -- Samples -----------------------------------------------------------------------------------
 
+-- A visual copy of each picked sample goes to Player.SampleBag, so the client can show it in
+-- the inventory (no text, the kid sorts by look). The server's bag table stays the truth.
+local function bagFolder(player: Player): Folder
+	local f = player:FindFirstChild("SampleBag")
+	if f and f:IsA("Folder") then
+		return f
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "SampleBag"
+	folder.Parent = player
+	return folder
+end
+
+local function putInBagView(player: Player, sample: Instance)
+	local copy = sample:Clone()
+	for _, d in copy:GetDescendants() do
+		if d:IsA("ProximityPrompt") or d:IsA("ParticleEmitter") or d:IsA("Attachment") or d:IsA("Light") then
+			d:Destroy()
+		end
+	end
+	copy.Parent = bagFolder(player)
+end
+
 local function bindSample(sample: Instance)
 	local kind = sample:GetAttribute("SampleKind")
 	if typeof(kind) ~= "string" or sample:GetAttribute("Collected") == true then
@@ -95,6 +118,7 @@ local function bindSample(sample: Instance)
 		bag[key] = (bag[key] or 0) + 1
 		player:SetAttribute("BagSamples", n + 1)
 		sample:SetAttribute("Collected", true)
+		putInBagView(player, sample)
 		sample:Destroy()
 		notify:FireClient(player, "craft.toast.picked", { n = n + 1, max = CraftConfig.BagSize })
 	end)
@@ -164,6 +188,7 @@ local function sortFor(player: Player)
 	store:SetAttribute("Rocks", num(store, "Rocks") + rocks)
 	store:SetAttribute("Parts", num(store, "Parts") + parts)
 	bags[player] = {}
+	bagFolder(player):ClearAllChildren()
 	player:SetAttribute("BagSamples", 0)
 	player:SetAttribute("CarryParts", 0)
 	notify:FireClient(player, "craft.toast.sorted", { iron = iron, rocks = rocks, parts = parts })
@@ -309,6 +334,7 @@ end
 
 local function setupPlayer(player: Player)
 	bags[player] = {}
+	bagFolder(player):ClearAllChildren()
 	player:SetAttribute("BagSamples", 0)
 	player:SetAttribute("CarryParts", 0)
 	player:SetAttribute("CarryingDrill", false)
