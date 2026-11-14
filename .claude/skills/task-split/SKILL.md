@@ -18,8 +18,8 @@ Rules:
 - **Size:** one task = one agent session (~1–3 hours). Bigger → split again.
 - **Vertical value:** prefer tasks that end in something visible or testable, not "write half a module".
 - **Dependencies:** mark `depends_on`; anything without dependencies can start now.
-- **Owner role** from `kb/team/roles.md` (Engine, Materials, Gameplay, Data, UI/QA, Design).
-- Note which tasks are good for the teammate on free OpenRouter models (well-specified, low-risk: UI, i18n, tests, docs) vs. ones needing a strong model (engine core, tricky physics).
+- **Owner role** from `kb/team/roles.md`.
+- Note which tasks are good for the teammate on free OpenRouter models (well-specified, low-risk: UI, i18n, tests, docs) vs. ones needing a strong model (core simulation, server/client networking).
 
 Show the user the split as a table (task · owner · files · depends on · parallel wave) and a short "waves" list (wave 1 can start now, wave 2 after…). Wait for approval before creating anything.
 
@@ -44,7 +44,7 @@ wave: 1
 
 ## Acceptance criteria
 - [todo] Конкретна перевірювана умова
-- [todo] `npm run build` проходить, тести зелені
+- [todo] `selene src`, `stylua --check src` і `rojo build` проходять; перевірено в Studio (playtest)
 
 ## Observations
 - [risk] ...

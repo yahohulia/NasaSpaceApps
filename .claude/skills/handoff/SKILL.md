@@ -31,7 +31,7 @@ date: <YYYY-MM-DD>
 2. ...
 
 ## Files touched
-- path/to/file.ts — навіщо
+- path/to/file.luau — навіщо
 
 ## Observations
 - [decision] ... (і окрема нотатка в kb/decisions/, якщо рішення важливе для інших)

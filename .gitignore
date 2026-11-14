@@ -1,7 +1,5 @@
 node_modules/
 dist/
-build/
-.react-router/
 .env
 .env.*
 !.env.example
@@ -10,3 +8,12 @@ build/
 .obsidian/workspace*.json
 .DS_Store
 Thumbs.db
+
+# Roblox / Rojo
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+sourcemap.json
+Packages/
+ServerPackages/

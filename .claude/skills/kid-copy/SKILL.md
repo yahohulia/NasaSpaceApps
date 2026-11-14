@@ -28,7 +28,7 @@ Keep a glossary in `kb/data/glossary.md` (create it if missing) and reuse the sa
 
 ## Strings, not hardcoded text
 - All text goes through i18n keys; never hardcode player-facing strings in game code.
-- Files: `src/i18n/uk.json` and `src/i18n/en.json` (same keys in both). Key style: `area.thing.state`, e.g. `capcom.leak.detected`, `mission.m04.brief.1`.
+- Files: `src/shared/i18n/uk.luau` and `src/shared/i18n/en.luau` (Luau tables with the same keys in both; read through one `Strings` module, not by indexing tables directly). Key style: `area.thing.state`, e.g. `capcom.leak.detected`, `mission.m04.brief.1`.
 - Ukrainian is usually ~20–30% longer than English — check that UI elements fit the Ukrainian version.
 - Use placeholders, not string concatenation: `"Екіпаж отримав +{dose} ☢️"`.
 
