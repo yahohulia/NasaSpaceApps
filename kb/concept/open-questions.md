@@ -9,6 +9,8 @@ permalink: sol-sandbox/concept/open-questions
 
 # Open questions
 
+> Цей список стосується пісочниці (в архіві). Актуальні питання — у розділі Observations нотатки [[Game concept]].
+
 Що ще не вирішено. Коли вирішуємо, створюємо нотатку в `kb/decisions/` і викреслюємо рядок звідси.
 
 ## Observations
@@ -24,6 +26,7 @@ permalink: sol-sandbox/concept/open-questions
 - [question] Список датасетів на вкладці Resources челенджу.
 
 ## Relations
+- see_also [[Game concept]]
 - part_of [[Sol Sandbox concept]]
 - see_also [[Scope]]
 - see_also [[Game modes]]
