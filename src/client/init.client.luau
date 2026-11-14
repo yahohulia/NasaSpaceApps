@@ -1,3 +1,4 @@
+local CraftClient = require(script.CraftClient)
 local FirstPersonClient = require(script.FirstPersonClient)
 local FootprintsClient = require(script.FootprintsClient)
 local NoticeClient = require(script.NoticeClient)
@@ -13,6 +14,7 @@ task.spawn(FootprintsClient.start)
 task.spawn(NoticeClient.start)
 task.spawn(RoleClient.start)
 task.spawn(RadiationClient.start)
+task.spawn(CraftClient.start)
 task.spawn(SparkyClient.start)
 task.spawn(WeatherClient.start)
 

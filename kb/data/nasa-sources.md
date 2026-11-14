@@ -54,6 +54,13 @@ permalink: sol-sandbox/data/nasa-sources
   - [question] Живого API для марсіанських пилових бур не знайдено. Кандидат на архівний сценарій — буря 2018 (REMS + RadLab за той самий період).
 - [todo] Отримати власний ключ api.nasa.gov (потрібен лише для APOD та інших сервісів api.nasa.gov; DONKI-API від CCMC працює без ключа).
 
+- [question] Кандидати для FactPopup з концепції [[Co-op campaign concept]] (2026-11-14), **не перевірені за першоджерелом**, частина з новинних сайтів:
+  - Доза на поверхні Марса ~0,64 мЗв/добу (Curiosity RAD), у польоті ~1,84 — https://www.nbcnews.com/sciencemain/radiation-mars-manageable-manned-mission-curiosity-finds-2D11716674
+  - Сол 24 год 39 хв — https://www.csmonitor.com/Science/2013/1209/Curiosity-measures-radiation-at-Martian-surface
+  - Phoenix розкопав лід ~4–5 см під поверхнею — https://www.space.com/5626-mars-lander-exposes-ice.html (перевірити формулювання)
+  - Карта льоду NASA: лід < 30 см від поверхні в Arcadia Planitia — https://www.nasa.gov/solar-system/nasas-treasure-map-for-water-ice-on-mars/
+  - Рідка вода, ймовірно, на глибині 11,5–20 км (InSight) — https://www.scientificamerican.com/article/mars-hides-colossal-ocean-deep-below-its-surface/
+
 ## Relations
 - part_of [[Index]]
 - see_also [[Challenge]]

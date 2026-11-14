@@ -1,7 +1,7 @@
 ---
 title: Game concept
 type: concept
-status: current
+status: superseded
 tags:
 - game-design
 - concept
@@ -10,6 +10,8 @@ permalink: sol-sandbox/concept/game-concept
 ---
 
 # Game concept
+
+> **Superseded 2026-11-14** by [[Co-op campaign concept]] (first-person co-op, resources Water/Food/Oxygen). Не будувати з цієї нотатки.
 
 **Головна концепція гри.** Джерело — командний документ «Junior Astronaut Mission Trainer — концепція гри» (@Max, 2026-11-12, `.docx` у корені репо). Ця нотатка — його стислий зміст для агентів. Попередні концепти: [[Mission Console concept]] (влився сюди: пульт, монітор, картки екіпажу) і [[Sol Sandbox concept]] (у архіві).
 
@@ -73,6 +75,7 @@ permalink: sol-sandbox/concept/game-concept
 - [question] Мова: англійська для журі + українська.
 
 ## Relations
+- see_also [[Co-op campaign concept]]
 - part_of [[Index]]
 - see_also [[Challenge]]
 - see_also [[Mission Console concept]]
