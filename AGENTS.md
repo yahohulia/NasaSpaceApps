@@ -56,6 +56,8 @@ Roblox Studio + Luau. Code lives in git as `.luau` files and is synced into Stud
 
 The 3D world, models and UI layouts built by hand live in the Studio place (Team Create), not in Rojo; `Workspace` is intentionally not in `default.project.json`. Keep the simulation in pure modules (no Instances) so balance can be tested headless with `lune`.
 
+**Always `git pull` before `rojo serve`.** The place is shared (Team Create), so Rojo writes your local `src/` into everyone's game; a stale checkout overwrites newer scripts (e.g. `Airlock`, `Sparky`) for the whole team. Write game scripts only in `src/`, not directly in Studio: scripts made in Studio are not in git and Rojo does not manage them.
+
 Checks before a commit: `selene src` (lint) and `stylua --check src` (format); `rojo build -o build.rbxl` must succeed.
 
 The earlier React Router web scaffold was removed on 2026-11-14 (see [[Decision: React Router SPA]], superseded).

@@ -38,6 +38,15 @@ permalink: sol-sandbox/data/nasa-sources
   - **RadLab API** не віддає заголовок CORS, тож з браузера напряму не працює: дози готуємо заздалегідь у JSON.
   - **DONKI tools page** https://ccmc.gsfc.nasa.gov/tools/DONKI/ — 200.
   - **CSA STEM** — у браузері відкривається (з Node був ECONNRESET). Корисне там: «Astronautics vocabulary» (для словника Спаркі), «Copyright/permission to reproduce CSA materials» (перевірити перед використанням), «Open data». **CSA food production** — 200.
+- [fact] Перевірка джерел для погодних подій 2026-11-14:
+  - **DONKI WSAEnlilSimulations** має в `impactList` точку `"location":"Mars"`: за травень 2024 — 33 прогнози влучання CME в Марс. Це модельний прогноз CCMC (не вимір), так і підписувати.
+  - **DONKI SEP** — інструменти лише біля Землі/Сонця (GOES, SOHO, STEREO A, ACE); прямих вимірів SEP на Марсі там немає. Для Марса беремо RadLab `MSL-RAD-Surface`.
+  - **Curiosity REMS** (Centro de Astrobiología, Іспанія): `https://mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json` → 200, без ключа, 4745 солів з 2012-08-07 до 2026-08-25. Поля: `terrestrial_date, sol, ls, season, min_temp, max_temp, pressure, local_uv_irradiance_index, sunrise, sunset, min_gts_temp, max_gts_temp`. Умова: «for outreach purposes only», наукові дані — через PDS; у грі вказати CAB як джерело.
+  - REMS `atmo_opacity` майже завжди `Sunny` (4742 з 4745) — для пилу не годиться. Натомість **глобальна пилова буря 2018 видна в даних**: UV-індекс падає з `Very_High` (21.05–05.06.2018) до `Low` (з 19.06.2018), max_temp з +6 °C до −25 °C.
+  - **InSight weather API** (`api.nasa.gov/insight_weather`) — місія завершена у 2022; з DEMO_KEY отримали 429, живих даних не чекаємо.
+  - **Погодні події в грі (2026-11-14):** `src/server/Weather.luau` + `src/shared/WeatherEvents.luau`; знімки робить `node --use-system-ca scripts/snapshots.mjs <name|all>` у `src/server/data/`: `rems-2018` (буря 2018: перший сол з UV `Low` — 2018-06-15, max_temp −15 °C проти +6 °C), `rems-recent` (найхолодніша ніч: сол 4980, 2026-08-09, −78 °C / вдень −7 °C), `radlab-2024-05` (пік 20.05.2024 ≈ 304 при медіані ≈ 4,6 → у грі лише «у 66 разів більше», бо одиниця не підтверджена), `donki-flr`, `donki-enlil-mars`. Спалах і CME беруться наживо з DONKI (30 днів), при збої — зі знімка.
+  - У плейсі ввімкнено `HttpService.HttpEnabled` (Game Settings → Security → Allow HTTP Requests) — живий DONKI з Roblox-сервера працює.
+  - [question] Живого API для марсіанських пилових бур не знайдено. Кандидат на архівний сценарій — буря 2018 (REMS + RadLab за той самий період).
 - [todo] Отримати власний ключ api.nasa.gov (потрібен лише для APOD та інших сервісів api.nasa.gov; DONKI-API від CCMC працює без ключа).
 
 ## Relations

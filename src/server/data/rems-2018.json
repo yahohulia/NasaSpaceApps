@@ -1,0 +1,1107 @@
+{
+	"header": {
+		"source": "Curiosity REMS",
+		"url": "https://mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json",
+		"credit": "Centro de Astrobiología (CAB) / NASA JPL-Caltech",
+		"notes": "Outreach data only (CAB disclaimer). Temperatures in °C, pressure in Pa.",
+		"retrievedAt": "2026-11-14"
+	},
+	"rows": [
+		{
+			"date": "2018-05-01",
+			"sol": 2038,
+			"minTemp": -74,
+			"maxTemp": -3,
+			"pressure": 726,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-02",
+			"sol": 2039,
+			"minTemp": -74,
+			"maxTemp": 0,
+			"pressure": 728,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-03",
+			"sol": 2040,
+			"minTemp": -74,
+			"maxTemp": -9,
+			"pressure": 729,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-04",
+			"sol": 2041,
+			"minTemp": -71,
+			"maxTemp": -9,
+			"pressure": 728,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-05",
+			"sol": 2042,
+			"minTemp": -72,
+			"maxTemp": -7,
+			"pressure": 730,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-06",
+			"sol": 2043,
+			"minTemp": -71,
+			"maxTemp": -7,
+			"pressure": 730,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-07",
+			"sol": 2044,
+			"minTemp": -75,
+			"maxTemp": -8,
+			"pressure": 730,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-08",
+			"sol": 2045,
+			"minTemp": -74,
+			"maxTemp": -7,
+			"pressure": 733,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-09",
+			"sol": 2046,
+			"minTemp": -72,
+			"maxTemp": -7,
+			"pressure": 734,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-10",
+			"sol": 2047,
+			"minTemp": -71,
+			"maxTemp": 3,
+			"pressure": 733,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-11",
+			"sol": 2048,
+			"minTemp": -73,
+			"maxTemp": 2,
+			"pressure": 735,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-12",
+			"sol": 2049,
+			"minTemp": -72,
+			"maxTemp": 3,
+			"pressure": 735,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-13",
+			"sol": 2050,
+			"minTemp": -71,
+			"maxTemp": 1,
+			"pressure": 737,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-14",
+			"sol": 2051,
+			"minTemp": -71,
+			"maxTemp": 1,
+			"pressure": 739,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-15",
+			"sol": 2052,
+			"minTemp": -72,
+			"maxTemp": 0,
+			"pressure": 739,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-16",
+			"sol": 2053,
+			"minTemp": -71,
+			"maxTemp": 3,
+			"pressure": 740,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-17",
+			"sol": 2054,
+			"minTemp": -72,
+			"maxTemp": 4,
+			"pressure": 740,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-18",
+			"sol": 2055,
+			"minTemp": -72,
+			"maxTemp": 2,
+			"pressure": 740,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-19",
+			"sol": 2056,
+			"minTemp": -74,
+			"maxTemp": 5,
+			"pressure": 740,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-20",
+			"sol": 2057,
+			"minTemp": -73,
+			"maxTemp": 2,
+			"pressure": 741,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-21",
+			"sol": 2058,
+			"minTemp": -71,
+			"maxTemp": 4,
+			"pressure": 743,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-22",
+			"sol": 2059,
+			"minTemp": -72,
+			"maxTemp": 4,
+			"pressure": 743,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-23",
+			"sol": 2060,
+			"minTemp": -73,
+			"maxTemp": 4,
+			"pressure": 743,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-24",
+			"sol": 2061,
+			"minTemp": -72,
+			"maxTemp": 5,
+			"pressure": 745,
+			"uv": "High"
+		},
+		{
+			"date": "2018-05-25",
+			"sol": 2062,
+			"minTemp": -72,
+			"maxTemp": 2,
+			"pressure": 745,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-26",
+			"sol": 2063,
+			"minTemp": -71,
+			"maxTemp": 3,
+			"pressure": 748,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-27",
+			"sol": 2064,
+			"minTemp": -71,
+			"maxTemp": 4,
+			"pressure": 748,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-28",
+			"sol": 2065,
+			"minTemp": -71,
+			"maxTemp": 2,
+			"pressure": 750,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-29",
+			"sol": 2066,
+			"minTemp": -72,
+			"maxTemp": 2,
+			"pressure": 751,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-30",
+			"sol": 2067,
+			"minTemp": -74,
+			"maxTemp": 3,
+			"pressure": 750,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-05-31",
+			"sol": 2068,
+			"minTemp": -69,
+			"maxTemp": 4,
+			"pressure": 752,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-06-01",
+			"sol": 2069,
+			"minTemp": -71,
+			"maxTemp": 4,
+			"pressure": 756,
+			"uv": "High"
+		},
+		{
+			"date": "2018-06-02",
+			"sol": 2070,
+			"minTemp": -70,
+			"maxTemp": 3,
+			"pressure": 757,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-06-04",
+			"sol": 2071,
+			"minTemp": -71,
+			"maxTemp": 4,
+			"pressure": 755,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-06-05",
+			"sol": 2072,
+			"minTemp": -71,
+			"maxTemp": 6,
+			"pressure": 758,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-06-06",
+			"sol": 2073,
+			"minTemp": -74,
+			"maxTemp": 7,
+			"pressure": 756,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-06-07",
+			"sol": 2074,
+			"minTemp": -70,
+			"maxTemp": 6,
+			"pressure": 758,
+			"uv": "Very_High"
+		},
+		{
+			"date": "2018-06-08",
+			"sol": 2075,
+			"minTemp": -69,
+			"maxTemp": 3,
+			"pressure": 762,
+			"uv": "High"
+		},
+		{
+			"date": "2018-06-09",
+			"sol": 2076,
+			"minTemp": -71,
+			"maxTemp": 3,
+			"pressure": 764,
+			"uv": "High"
+		},
+		{
+			"date": "2018-06-10",
+			"sol": 2077,
+			"minTemp": -69,
+			"maxTemp": 0,
+			"pressure": 765,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-06-11",
+			"sol": 2078,
+			"minTemp": -73,
+			"maxTemp": 1,
+			"pressure": 766,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-06-12",
+			"sol": 2079,
+			"minTemp": -68,
+			"maxTemp": 2,
+			"pressure": 767,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-06-13",
+			"sol": 2080,
+			"minTemp": -67,
+			"maxTemp": 2,
+			"pressure": 768,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-06-14",
+			"sol": 2081,
+			"minTemp": -69,
+			"maxTemp": -3,
+			"pressure": 770,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-06-15",
+			"sol": 2082,
+			"minTemp": -64,
+			"maxTemp": -15,
+			"pressure": 768,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-16",
+			"sol": 2083,
+			"minTemp": -63,
+			"maxTemp": -14,
+			"pressure": 769,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-17",
+			"sol": 2084,
+			"minTemp": -65,
+			"maxTemp": -21,
+			"pressure": 771,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-18",
+			"sol": 2085,
+			"minTemp": -57,
+			"maxTemp": -24,
+			"pressure": 772,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-19",
+			"sol": 2086,
+			"minTemp": -57,
+			"maxTemp": -25,
+			"pressure": 776,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-20",
+			"sol": 2087,
+			"minTemp": -59,
+			"maxTemp": -28,
+			"pressure": 780,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-21",
+			"sol": 2088,
+			"minTemp": -58,
+			"maxTemp": -24,
+			"pressure": 778,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-22",
+			"sol": 2089,
+			"minTemp": -59,
+			"maxTemp": -26,
+			"pressure": 779,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-23",
+			"sol": 2090,
+			"minTemp": -61,
+			"maxTemp": -23,
+			"pressure": 778,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-24",
+			"sol": 2091,
+			"minTemp": -63,
+			"maxTemp": -22,
+			"pressure": 779,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-25",
+			"sol": 2092,
+			"minTemp": -67,
+			"maxTemp": -24,
+			"pressure": 781,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-26",
+			"sol": 2093,
+			"minTemp": -63,
+			"maxTemp": -24,
+			"pressure": 780,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-27",
+			"sol": 2094,
+			"minTemp": -61,
+			"maxTemp": -27,
+			"pressure": 783,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-28",
+			"sol": 2095,
+			"minTemp": -61,
+			"maxTemp": -25,
+			"pressure": 784,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-29",
+			"sol": 2096,
+			"minTemp": -63,
+			"maxTemp": -22,
+			"pressure": 788,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-06-30",
+			"sol": 2097,
+			"minTemp": -60,
+			"maxTemp": -23,
+			"pressure": 789,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-01",
+			"sol": 2098,
+			"minTemp": -61,
+			"maxTemp": -23,
+			"pressure": 791,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-02",
+			"sol": 2099,
+			"minTemp": -61,
+			"maxTemp": -25,
+			"pressure": 791,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-03",
+			"sol": 2100,
+			"minTemp": -61,
+			"maxTemp": -29,
+			"pressure": 797,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-04",
+			"sol": 2101,
+			"minTemp": -61,
+			"maxTemp": -23,
+			"pressure": 796,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-05",
+			"sol": 2102,
+			"minTemp": -60,
+			"maxTemp": -22,
+			"pressure": 797,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-06",
+			"sol": 2103,
+			"minTemp": -58,
+			"maxTemp": -26,
+			"pressure": 797,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-07",
+			"sol": 2104,
+			"minTemp": -59,
+			"maxTemp": -23,
+			"pressure": 797,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-08",
+			"sol": 2105,
+			"minTemp": -61,
+			"maxTemp": -25,
+			"pressure": 802,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-09",
+			"sol": 2106,
+			"minTemp": -63,
+			"maxTemp": -27,
+			"pressure": 803,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-11",
+			"sol": 2107,
+			"minTemp": -65,
+			"maxTemp": -21,
+			"pressure": 807,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-12",
+			"sol": 2108,
+			"minTemp": -65,
+			"maxTemp": -24,
+			"pressure": 806,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-13",
+			"sol": 2109,
+			"minTemp": -66,
+			"maxTemp": -22,
+			"pressure": 809,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-14",
+			"sol": 2110,
+			"minTemp": -59,
+			"maxTemp": -20,
+			"pressure": 810,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-15",
+			"sol": 2111,
+			"minTemp": -67,
+			"maxTemp": -20,
+			"pressure": 813,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-16",
+			"sol": 2112,
+			"minTemp": -63,
+			"maxTemp": -20,
+			"pressure": 813,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-17",
+			"sol": 2113,
+			"minTemp": -62,
+			"maxTemp": -20,
+			"pressure": 815,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-18",
+			"sol": 2114,
+			"minTemp": -61,
+			"maxTemp": -19,
+			"pressure": 816,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-19",
+			"sol": 2115,
+			"minTemp": -61,
+			"maxTemp": -21,
+			"pressure": 818,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-20",
+			"sol": 2116,
+			"minTemp": -62,
+			"maxTemp": -21,
+			"pressure": 820,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-21",
+			"sol": 2117,
+			"minTemp": -64,
+			"maxTemp": -19,
+			"pressure": 822,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-22",
+			"sol": 2118,
+			"minTemp": -68,
+			"maxTemp": -19,
+			"pressure": 822,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-23",
+			"sol": 2119,
+			"minTemp": -69,
+			"maxTemp": -16,
+			"pressure": 824,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-24",
+			"sol": 2120,
+			"minTemp": -67,
+			"maxTemp": -16,
+			"pressure": 828,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-25",
+			"sol": 2121,
+			"minTemp": -62,
+			"maxTemp": -18,
+			"pressure": 829,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-26",
+			"sol": 2122,
+			"minTemp": -63,
+			"maxTemp": -14,
+			"pressure": 830,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-27",
+			"sol": 2123,
+			"minTemp": -68,
+			"maxTemp": -18,
+			"pressure": 831,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-28",
+			"sol": 2124,
+			"minTemp": -67,
+			"maxTemp": -17,
+			"pressure": 832,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-29",
+			"sol": 2125,
+			"minTemp": -66,
+			"maxTemp": -17,
+			"pressure": 834,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-30",
+			"sol": 2126,
+			"minTemp": -63,
+			"maxTemp": -18,
+			"pressure": 837,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-07-31",
+			"sol": 2127,
+			"minTemp": -69,
+			"maxTemp": -18,
+			"pressure": 838,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-01",
+			"sol": 2128,
+			"minTemp": -65,
+			"maxTemp": -20,
+			"pressure": 841,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-02",
+			"sol": 2129,
+			"minTemp": -66,
+			"maxTemp": -21,
+			"pressure": 843,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-03",
+			"sol": 2130,
+			"minTemp": -62,
+			"maxTemp": -18,
+			"pressure": 844,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-04",
+			"sol": 2131,
+			"minTemp": -67,
+			"maxTemp": -21,
+			"pressure": 846,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-05",
+			"sol": 2132,
+			"minTemp": -69,
+			"maxTemp": -16,
+			"pressure": 847,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-06",
+			"sol": 2133,
+			"minTemp": -65,
+			"maxTemp": -18,
+			"pressure": 849,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-07",
+			"sol": 2134,
+			"minTemp": -65,
+			"maxTemp": -14,
+			"pressure": 851,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-08",
+			"sol": 2135,
+			"minTemp": -66,
+			"maxTemp": -15,
+			"pressure": 854,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-09",
+			"sol": 2136,
+			"minTemp": -66,
+			"maxTemp": -13,
+			"pressure": 856,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-10",
+			"sol": 2137,
+			"minTemp": -66,
+			"maxTemp": -13,
+			"pressure": 857,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-11",
+			"sol": 2138,
+			"minTemp": -68,
+			"maxTemp": -16,
+			"pressure": 858,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-12",
+			"sol": 2139,
+			"minTemp": -70,
+			"maxTemp": -11,
+			"pressure": 857,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-13",
+			"sol": 2140,
+			"minTemp": -70,
+			"maxTemp": -10,
+			"pressure": 858,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-14",
+			"sol": 2141,
+			"minTemp": -66,
+			"maxTemp": -17,
+			"pressure": 863,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-15",
+			"sol": 2142,
+			"minTemp": -71,
+			"maxTemp": -10,
+			"pressure": 865,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-17",
+			"sol": 2143,
+			"minTemp": -71,
+			"maxTemp": -12,
+			"pressure": 865,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-18",
+			"sol": 2144,
+			"minTemp": -67,
+			"maxTemp": -11,
+			"pressure": 867,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-19",
+			"sol": 2145,
+			"minTemp": -66,
+			"maxTemp": -10,
+			"pressure": 868,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-20",
+			"sol": 2146,
+			"minTemp": -67,
+			"maxTemp": -10,
+			"pressure": 870,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-21",
+			"sol": 2147,
+			"minTemp": -68,
+			"maxTemp": -15,
+			"pressure": 870,
+			"uv": "Low"
+		},
+		{
+			"date": "2018-08-22",
+			"sol": 2148,
+			"minTemp": -67,
+			"maxTemp": -13,
+			"pressure": 872,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-23",
+			"sol": 2149,
+			"minTemp": -68,
+			"maxTemp": -10,
+			"pressure": 874,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-24",
+			"sol": 2150,
+			"minTemp": -68,
+			"maxTemp": -11,
+			"pressure": 874,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-25",
+			"sol": 2151,
+			"minTemp": -66,
+			"maxTemp": -12,
+			"pressure": 876,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-26",
+			"sol": 2152,
+			"minTemp": -69,
+			"maxTemp": -10,
+			"pressure": 878,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-27",
+			"sol": 2153,
+			"minTemp": -68,
+			"maxTemp": -10,
+			"pressure": 877,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-28",
+			"sol": 2154,
+			"minTemp": -73,
+			"maxTemp": -10,
+			"pressure": 878,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-29",
+			"sol": 2155,
+			"minTemp": -76,
+			"maxTemp": -12,
+			"pressure": 878,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-30",
+			"sol": 2156,
+			"minTemp": -71,
+			"maxTemp": -6,
+			"pressure": 879,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-08-31",
+			"sol": 2157,
+			"minTemp": -67,
+			"maxTemp": -5,
+			"pressure": 877,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-01",
+			"sol": 2158,
+			"minTemp": -67,
+			"maxTemp": -7,
+			"pressure": 880,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-02",
+			"sol": 2159,
+			"minTemp": -68,
+			"maxTemp": -10,
+			"pressure": 883,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-03",
+			"sol": 2160,
+			"minTemp": -68,
+			"maxTemp": -8,
+			"pressure": 885,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-04",
+			"sol": 2161,
+			"minTemp": -68,
+			"maxTemp": -5,
+			"pressure": 884,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-05",
+			"sol": 2162,
+			"minTemp": -69,
+			"maxTemp": -5,
+			"pressure": 886,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-06",
+			"sol": 2163,
+			"minTemp": -70,
+			"maxTemp": -5,
+			"pressure": 886,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-07",
+			"sol": 2164,
+			"minTemp": -68,
+			"maxTemp": -8,
+			"pressure": 886,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-08",
+			"sol": 2165,
+			"minTemp": -70,
+			"maxTemp": -10,
+			"pressure": 887,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-09",
+			"sol": 2166,
+			"minTemp": -72,
+			"maxTemp": -10,
+			"pressure": 887,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-10",
+			"sol": 2167,
+			"minTemp": -73,
+			"maxTemp": -12,
+			"pressure": 885,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-11",
+			"sol": 2168,
+			"minTemp": -69,
+			"maxTemp": -10,
+			"pressure": 886,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-12",
+			"sol": 2169,
+			"minTemp": -70,
+			"maxTemp": -10,
+			"pressure": 887,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-13",
+			"sol": 2170,
+			"minTemp": -68,
+			"maxTemp": -12,
+			"pressure": 886,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-14",
+			"sol": 2171,
+			"minTemp": -65,
+			"maxTemp": -12,
+			"pressure": 879,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-15",
+			"sol": 2172,
+			"minTemp": -73,
+			"maxTemp": -14,
+			"pressure": 893,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-16",
+			"sol": 2173,
+			"minTemp": -65,
+			"maxTemp": -14,
+			"pressure": 893,
+			"uv": "Moderate"
+		},
+		{
+			"date": "2018-09-17",
+			"sol": 2174,
+			"minTemp": -68,
+			"maxTemp": -22,
+			"pressure": 896,
+			"uv": "Moderate"
+		}
+	]
+}
