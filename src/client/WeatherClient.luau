@@ -1,13 +1,10 @@
 -- Shows the current weather event: a card at the top of the screen (what happened,
--- the real fact, source + ARCHIVED/LIVE label) and the event's look on Lighting.
+-- the real fact, source + ARCHIVED/LIVE label). The event's look on the sky is SkyClient's job.
 -- Reads ReplicatedStorage.WeatherState@Payload (JSON, "" = calm), set by the server.
 local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
-local DataMapping = require(ReplicatedStorage.Shared.DataMapping)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local PANEL = Color3.fromRGB(27, 35, 48)
@@ -93,57 +90,16 @@ local function makeCard(playerGui: PlayerGui): Card
 	return card
 end
 
--- Lighting values before any event, restored when the weather is calm.
-type Base = { density: number, haze: number, color: Color3, brightness: number, clockTime: number }
-
-local function tween(instance: Instance, seconds: number, goal: { [string]: any })
-	TweenService:Create(instance, TweenInfo.new(seconds, Enum.EasingStyle.Sine), goal):Play()
-end
-
 function WeatherClient.start()
 	local player = Players.LocalPlayer
 	local lang = Strings.langFromLocale(player.LocaleId)
 	local state = ReplicatedStorage:WaitForChild("WeatherState")
 	local card = makeCard(player:WaitForChild("PlayerGui") :: PlayerGui)
 
-	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
-	local base: Base? = if atmosphere
-		then {
-			density = atmosphere.Density,
-			haze = atmosphere.Haze,
-			color = atmosphere.Color,
-			brightness = Lighting.Brightness,
-			clockTime = Lighting.ClockTime,
-		}
-		else nil
-
-	local function applyLook(id: string?)
-		if not atmosphere or not base then
-			return
-		end
-		local look = if id then DataMapping.looks[id] else nil
-		local seconds = if look then look.fadeSeconds else 4
-		if look then
-			tween(atmosphere, seconds, {
-				Density = look.atmosphereDensity,
-				Haze = look.atmosphereHaze,
-				Color = look.atmosphereColor,
-			})
-			tween(Lighting, seconds, {
-				Brightness = base.brightness * look.brightnessScale,
-				ClockTime = look.clockTime or base.clockTime,
-			})
-		else
-			tween(atmosphere, seconds, { Density = base.density, Haze = base.haze, Color = base.color })
-			tween(Lighting, seconds, { Brightness = base.brightness, ClockTime = base.clockTime })
-		end
-	end
-
 	local function render()
 		local raw = state:GetAttribute("Payload")
 		if typeof(raw) ~= "string" or raw == "" then
 			card.gui.Enabled = false
-			applyLook(nil)
 			return
 		end
 		local ok, payload = pcall(HttpService.JSONDecode, HttpService, raw)
@@ -172,7 +128,6 @@ function WeatherClient.start()
 		card.footer.Text =
 			`{payload.source} · {payload.credit} · {Strings.get(labelKey, lang, { date = payload.date })}`
 		card.gui.Enabled = true
-		applyLook(payload.id)
 	end
 
 	state:GetAttributeChangedSignal("Payload"):Connect(render)

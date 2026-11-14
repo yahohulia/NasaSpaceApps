@@ -3,7 +3,7 @@
 		"source": "Curiosity RAD",
 		"url": "https://visualization.osdr.nasa.gov/radlab/api/?instrument_id=MSL-RAD-Surface&timestamp>=2024-05-10&timestamp<2024-06-01&absorbed_dose_rate&format=csv",
 		"credit": "NASA OSDR RadLab",
-		"notes": "absorbed_dose_rate; unit not confirmed (see kb/data/nasa-sources.md), so the game shows only peak/median ratios.",
+		"notes": "absorbed_dose_rate; microgray per hour (μGy/h), absorbed dose; see kb/data/nasa-sources.md.",
 		"retrievedAt": "2026-11-14"
 	},
 	"rows": [

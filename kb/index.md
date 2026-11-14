@@ -35,6 +35,7 @@ permalink: sol-sandbox/index
 - see_also [[NASA data sources]]
 - see_also [[KB format]]
 - see_also [[Tasks]]
+- see_also [[Decision: multiplayer crew]]
 - see_also [[Decision: Roblox asset conventions]]
 - see_also [[Decision: content and asset conventions]]
 - see_also [[Decision: git authorship]]

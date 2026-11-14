@@ -93,7 +93,7 @@ const snapshots = {
 				source: "Curiosity RAD",
 				url,
 				credit: "NASA OSDR RadLab",
-				notes: "absorbed_dose_rate; unit not confirmed (see kb/data/nasa-sources.md), so the game shows only peak/median ratios.",
+				notes: "absorbed_dose_rate; microgray per hour (μGy/h), absorbed dose; see kb/data/nasa-sources.md.",
 			},
 			rows,
 		};
