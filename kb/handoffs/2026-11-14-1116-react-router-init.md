@@ -1,9 +1,10 @@
 ---
-title: "Handoff: React Router init 2026-11-14 11:16"
+title: 'Handoff: React Router init 2026-11-14 11:16'
 type: handoff
 status: done
 branch: main
 date: 2026-11-14
+permalink: sol-sandbox/handoffs/2026-11-14-1116-react-router-init
 ---
 
 # Handoff: React Router init 2026-11-14 11:16

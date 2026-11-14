@@ -6,6 +6,7 @@ tags:
 - game-design
 - concept-b
 date: 2026-11-12
+permalink: sol-sandbox/concept/mission-console
 ---
 
 # Mission Console concept

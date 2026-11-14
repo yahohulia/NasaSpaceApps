@@ -1,8 +1,9 @@
 ---
-title: "Decision: React Router SPA"
+title: 'Decision: React Router SPA'
 type: decision
 status: superseded
 date: 2026-11-14
+permalink: sol-sandbox/decisions/2026-11-14-react-router-spa
 ---
 
 # Decision: React Router SPA
