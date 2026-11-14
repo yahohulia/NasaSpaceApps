@@ -9,14 +9,27 @@ export type Asset = {
 	source: string, -- URL or "uploaded by <owner>"
 }
 
+-- Crew movement = Rthro Animation Package, made by Roblox (bundle 356); picked by the
+-- team on 2026-11-14 from all 17 official packs. IDs from
+-- https://create.roblox.com/docs/animation/using (Catalog animations); each one checked
+-- with MarketplaceService:GetProductInfo (creator Roblox, asset type 24 = Animation).
+local RTHRO_CREDIT = "Roblox (Rthro Animation Package)"
+local RTHRO_SOURCE = "https://www.roblox.com/bundles/356/Rthro-Animation-Package"
+
+local function rthro(id: number): Asset
+	return { id = `rbxassetid://{id}`, kind = "Animation", credit = RTHRO_CREDIT, source = RTHRO_SOURCE }
+end
+
 local Assets: { [string]: Asset } = {
-	-- Example:
-	-- MarsSurface = {
-	-- 	id = "rbxassetid://0",
-	-- 	kind = "Image",
-	-- 	credit = "NASA/JPL-Caltech",
-	-- 	source = "https://...",
-	-- },
+	CrewWalk = rthro(2510202577),
+	CrewRun = rthro(2510198475),
+	CrewJump = rthro(2510197830),
+	CrewIdle = rthro(2510196951),
+	CrewIdle2 = rthro(2510197257),
+	CrewFall = rthro(2510195892),
+	CrewClimb = rthro(2510192778),
+	CrewSwim = rthro(2510199791),
+	CrewSwimIdle = rthro(2510201162),
 }
 
 return table.freeze(Assets)

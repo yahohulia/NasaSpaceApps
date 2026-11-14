@@ -1,6 +1,18 @@
+local FirstPersonClient = require(script.FirstPersonClient)
+local FootprintsClient = require(script.FootprintsClient)
+local NoticeClient = require(script.NoticeClient)
+local RadiationClient = require(script.RadiationClient)
+local RoleClient = require(script.RoleClient)
+local SkyClient = require(script.SkyClient)
 local SparkyClient = require(script.SparkyClient)
 local WeatherClient = require(script.WeatherClient)
 
+task.spawn(SkyClient.start)
+task.spawn(FirstPersonClient.start)
+task.spawn(FootprintsClient.start)
+task.spawn(NoticeClient.start)
+task.spawn(RoleClient.start)
+task.spawn(RadiationClient.start)
 task.spawn(SparkyClient.start)
 task.spawn(WeatherClient.start)
 

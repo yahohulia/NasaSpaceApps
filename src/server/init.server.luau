@@ -1,9 +1,17 @@
 local Airlock = require(script.Airlock)
+local Crew = require(script.Crew)
+local CrewAnimations = require(script.CrewAnimations)
+local Notice = require(script.Notice)
+local Radiation = require(script.Radiation)
 local Sparky = require(script.Sparky)
 local Weather = require(script.Weather)
 
+Notice.start()
 Airlock.start()
+Crew.start()
+CrewAnimations.start()
 Sparky.start()
 Weather.start()
+Radiation.start()
 
 print("[junior-astronaut] server started")

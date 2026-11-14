@@ -5,6 +5,8 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 
+local Notice = require(script.Parent.Notice)
+
 local TAG = "TeleportPad"
 local COOLDOWN_SECONDS = 1.5
 
@@ -36,6 +38,11 @@ local function onTouched(pad: BasePart, hit: BasePart)
 	end
 
 	lastUse[player] = now
+	-- Pads with LeadsOutside=true are closed to players the medic keeps inside (Radiation).
+	if pad:GetAttribute("LeadsOutside") == true and player:GetAttribute("OutsideBlocked") == true then
+		Notice.send(player, "radiation.blocked", "alert")
+		return
+	end
 	character:PivotTo(target.CFrame)
 end
 

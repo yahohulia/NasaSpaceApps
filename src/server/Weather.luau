@@ -62,6 +62,7 @@ local ORDER = { "dust", "cold", "radiation", "flare", "cme" }
 local Weather = {}
 
 local state: Folder
+local current: WeatherEvents.Payload? = nil
 
 function Weather.set(id: string): boolean
 	local build = BUILDERS[id]
@@ -74,12 +75,19 @@ function Weather.set(id: string): boolean
 		warn(`[weather] could not build "{id}": {payload}`)
 		return false
 	end
+	current = payload
 	state:SetAttribute("Payload", HttpService:JSONEncode(payload))
 	print(`[weather] {id} on ({payload.label} · {payload.date})`)
 	return true
 end
 
+-- The event that is on now, or nil when calm.
+function Weather.current(): WeatherEvents.Payload?
+	return current
+end
+
 function Weather.clear()
+	current = nil
 	state:SetAttribute("Payload", "")
 	print("[weather] calm")
 end
