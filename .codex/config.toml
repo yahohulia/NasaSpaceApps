@@ -1,0 +1,10 @@
+# Codex reads this file after the repository is trusted.
+# Roblox Studio Quick connect configures Roblox_Studio in the user's global config.
+[mcp_servers.basic-memory]
+command = "uv"
+args = ["tool", "run", "basic-memory", "mcp", "--project", "sol-sandbox"]
+startup_timeout_sec = 120
+
+[mcp_servers.basic-memory.env]
+PYTHONUTF8 = "1"
+PYTHONIOENCODING = "utf-8"
