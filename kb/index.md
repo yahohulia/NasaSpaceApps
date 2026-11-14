@@ -12,11 +12,17 @@ permalink: sol-sandbox/index
 ## Observations
 
 - [fact] Стадія: підготовка до хакатону (концепт і налаштування середовища). Коду гри ще немає.
+
 - [fact] 2026-11-14: ініціалізовано React Router + React + TypeScript + Vite SPA; див. [[Decision: React Router SPA]] та [[Handoff: React Router init 2026-11-14 11:16]].
-- [fact] 2026-11-12: у роботі концепт B [[Mission Console concept]] (пульт-тренажер за референсом image.png). Пісочницю [[Sol Sandbox concept]] поки відкладено.
-- [todo] D-1: зафіксувати контракти рушія (сітка, матеріал, події) і створити скіл `add-material`.
+
+- [fact] 2026-11-14: головна концепція — [[Game concept]]. Це виживання на Марсі, гравець — оператор на Землі з камерами, 3 ресурси + радіація, маскот Спаркі. [[Mission Console concept]] влився в неї, [[Sol Sandbox concept]] в архіві.
+- [todo] Закрити відкриті питання з [[Game concept]] на дзвінку команди (стек, тривалість гри, тип аварії, покроково чи ні).
+- [todo] Розписати баланс (енергія панелей, споживання модулів, кисень на людину за добу) з реальними значеннями в [[NASA data sources]].
 
 ## Relations
+
+- see_also [[Game concept]]
+- see_also [[Decision: Mars setting]]
 
 - see_also [[Challenge]]
 - see_also [[Mission Console concept]]

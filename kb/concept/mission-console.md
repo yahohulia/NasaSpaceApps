@@ -1,7 +1,7 @@
 ---
 title: Mission Console concept
 type: concept
-status: draft
+status: merged
 tags:
 - game-design
 - concept-b
@@ -9,6 +9,8 @@ date: 2026-11-12
 ---
 
 # Mission Console concept
+
+> **Влився в [[Game concept]] (2026-11-14).** Пульт, монітор і картки екіпажу лишилися. Але гравець тепер оператор на Землі, локація — Марс, а ресурси згруповано в 3 + радіацію. Якщо щось тут розходиться з [[Game concept]], правильна та нотатка.
 
 Альтернатива [[Sol Sandbox concept]] (ту поки відклали). Основа — референс `image.png`: пульт керування, монітор з розрізом місячної бази, троє астронавтів.
 
@@ -63,6 +65,7 @@ date: 2026-11-12
 - [question] Скільки слотів під модулі і які модулі в MVP (пропоную: електролізер, теплиця, сонячні панелі зовні, батарея, укриття).
 
 ## Relations
+- see_also [[Game concept]]
 - part_of [[Index]]
 - see_also [[Sol Sandbox concept]]
 - see_also [[Challenge]]
