@@ -283,6 +283,9 @@ function MissionBoardClient.start()
 		local reason = p and p.failed
 		failCard.Visible = reason ~= nil
 		dim.Visible = reason ~= nil
+		if reason then
+			debriefCard.Visible = false -- one card at a time
+		end
 		cursor()
 		if not reason then
 			return
