@@ -36,8 +36,8 @@ LightsConfig.PanelTag = "LightPanel" -- part with the panel screen (in the power
 LightsConfig.PanelDistance = 9 -- studs: prompt distance; the server allows a bit more
 LightsConfig.ToggleCooldown = 0.25 -- seconds between two clicks of one player
 -- Every lit room uses base power (MB_ResourceServer reads MB_BaseState@LitRooms), so switching rooms
--- off on the panel saves power after a dust storm. Base power is 0..100; the sun gives 0.35/s.
-LightsConfig.PowerPerLitRoom = 0.01 -- game value, TODO balance: power per second per lit room
+-- off on the panel saves power after a dust storm. Base power is 0..100; the rest is in PowerConfig.
+LightsConfig.PowerPerLitRoom = 0.02 -- game value, TODO balance: power per second per lit room
 
 -- Lights on: warm, a bit dramatic. Lights off: a faint cold night glow so you still see the way.
 LightsConfig.On = {

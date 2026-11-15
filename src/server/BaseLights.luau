@@ -5,12 +5,15 @@
 -- Lights off never means pitch black: a faint cold night glow stays on (kids 7-12).
 -- State per room: the room's zone part gets the attribute "LightsOn" (replicates to clients).
 -- Clients ask with ReplicatedStorage.BaseLightsToggle:FireServer(roomId | "all", on).
+-- Low base power (MB_BaseState@Power) dims every lit lamp; at zero they fall back to the night glow.
+-- The dim level 0..1 goes to MB_BaseState@LightsDim for the client's room ambient (BaseLightsClient).
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
+local PowerConfig = require(ReplicatedStorage.Shared.PowerConfig)
 
 type Lamp = {
 	fill: PointLight,
@@ -29,6 +32,35 @@ local BaseLights = {}
 
 local rooms: { [string]: Room } = {}
 local lastClick: { [Player]: number } = {}
+local dim = 1 -- 1 = full brightness, 0 = no power (night glow only)
+
+-- Brightness share for a base power level: 1 above DimFromPower, down to DimMinBrightness, 0 at zero.
+local function dimForPower(power: number): number
+	if power <= 0 then
+		return 0
+	end
+	if power >= PowerConfig.DimFromPower then
+		return 1
+	end
+	local t = power / PowerConfig.DimFromPower
+	return PowerConfig.DimMinBrightness + (1 - PowerConfig.DimMinBrightness) * t
+end
+
+-- The "lights on" look at the current power level.
+local function onLook(): LightsConfig.LampLook
+	if dim <= 0 then
+		return LightsConfig.Off
+	end
+	local on, off = LightsConfig.On, LightsConfig.Off
+	return {
+		color = on.color,
+		spotBrightness = on.spotBrightness * dim,
+		spotRange = on.spotRange,
+		fillBrightness = math.max(off.fillBrightness, on.fillBrightness * dim),
+		fillRange = on.fillRange,
+		glassColor = off.glassColor:Lerp(on.glassColor, dim),
+	}
+end
 
 local function findPath(path: { string }): Instance?
 	local node: Instance? = workspace
@@ -176,7 +208,7 @@ end
 
 -- Lights coming on: lamp after lamp, each with a short tube-light flicker.
 local function rippleOn(room: Room, version: number)
-	local on = LightsConfig.On
+	local on = onLook()
 	for i, lamp in room.lamps do
 		task.delay((i - 1) * LightsConfig.RippleSeconds, function()
 			local steps = { 0.55, 0.1, 0.8, 1 }
@@ -184,7 +216,7 @@ local function rippleOn(room: Room, version: number)
 				if room.version ~= version then
 					return
 				end
-				lamp.spot.Enabled = true
+				lamp.spot.Enabled = on.spotBrightness > 0
 				lamp.fill.Color = on.color
 				lamp.spot.Color = on.color
 				lamp.fill.Brightness = on.fillBrightness * k
@@ -223,7 +255,7 @@ local function setRoom(room: Room, on: boolean, instant: boolean?)
 	publishLitRooms()
 	if instant then
 		for _, lamp in room.lamps do
-			setLook(lamp, if on then LightsConfig.On else LightsConfig.Off, 0)
+			setLook(lamp, if on then onLook() else LightsConfig.Off, 0)
 		end
 	elseif on then
 		rippleOn(room, room.version)
@@ -275,6 +307,52 @@ local function onToggle(player: Player, roomId: unknown, on: unknown)
 	end
 end
 
+-- Follows base power: dims the lit rooms when the battery runs low, and flickers just before it is empty.
+local function watchPower()
+	local baseState = ReplicatedStorage:WaitForChild("MB_BaseState", 30)
+	if not baseState then
+		return
+	end
+	baseState:SetAttribute("LightsDim", dim)
+	while true do
+		task.wait(1)
+		local value = baseState:GetAttribute("Power")
+		local power = if typeof(value) == "number" then value else 100
+		local want = dimForPower(power)
+		if math.abs(want - dim) >= 0.03 or (want == 0) ~= (dim == 0) or (want == 1 and dim ~= 1) then
+			dim = want
+			baseState:SetAttribute("LightsDim", dim)
+			for _, room in rooms do
+				if room.on then
+					for _, lamp in room.lamps do
+						setLook(lamp, onLook(), 1.5)
+					end
+				end
+			end
+		end
+		-- almost empty: now and then one lamp flickers (a hint to save power)
+		if power > 0 and power < 8 and math.random() < 0.35 then
+			local lit = {}
+			for _, room in rooms do
+				if room.on and #room.lamps > 0 then
+					table.insert(lit, room)
+				end
+			end
+			if #lit > 0 then
+				local room = lit[math.random(1, #lit)]
+				local lamp = room.lamps[math.random(1, #room.lamps)]
+				local look = onLook()
+				lamp.spot.Brightness = look.spotBrightness * 0.2
+				task.delay(0.08, function()
+					if room.on then
+						lamp.spot.Brightness = onLook().spotBrightness
+					end
+				end)
+			end
+		end
+	end
+end
+
 function BaseLights.isOn(roomId: string): boolean
 	local room = rooms[roomId]
 	return room ~= nil and room.on
@@ -290,6 +368,7 @@ function BaseLights.start()
 		ReplicatedStorage:WaitForChild("MB_BaseState", 30)
 		publishLitRooms()
 	end)
+	task.spawn(watchPower)
 
 	local remote = ReplicatedStorage:FindFirstChild("BaseLightsToggle")
 	if not (remote and remote:IsA("RemoteEvent")) then

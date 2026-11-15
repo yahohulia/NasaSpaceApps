@@ -110,6 +110,7 @@ local function startInteriorLook(player: Player)
 	local envSpecular = Lighting.EnvironmentSpecularScale
 	local elapsed = 0
 	local zoneCache: BasePart? = nil
+	local baseState: Instance? = nil -- MB_BaseState (LightsDim), looked up with the zone
 
 	RunService.RenderStepped:Connect(function(dt)
 		elapsed += dt
@@ -118,15 +119,20 @@ local function startInteriorLook(player: Player)
 			local character = player.Character
 			local root = character and character:FindFirstChild("HumanoidRootPart")
 			zoneCache = if root and root:IsA("BasePart") then roomZoneAt(root.Position) else nil
+			baseState = ReplicatedStorage:FindFirstChild("MB_BaseState")
 		end
 		local inside = player:GetAttribute("IsInside") == true or zoneCache ~= nil
 		local k = math.clamp(dt / LightsConfig.InteriorBlendSeconds, 0, 1)
 		blend += ((if inside then 1 else 0) - blend) * math.min(1, k * 4)
 
 		local roomOn = zoneCache == nil or zoneCache:GetAttribute("LightsOn") ~= false
+		-- low base power dims the lamps (server BaseLights, MB_BaseState@LightsDim 0..1)
+		local dimValue = if baseState then baseState:GetAttribute("LightsDim") else nil
+		local dim = if typeof(dimValue) == "number" then dimValue else 1
 		local wantScale = if not inside
 			then 1
-			elseif roomOn then LightsConfig.InteriorAmbientOn
+			elseif roomOn then LightsConfig.InteriorAmbientOff
+				+ (LightsConfig.InteriorAmbientOn - LightsConfig.InteriorAmbientOff) * dim
 			else LightsConfig.InteriorAmbientOff
 		scale += (wantScale - scale) * math.min(1, k * 4)
 		Lighting:SetAttribute("AmbientScale", scale)

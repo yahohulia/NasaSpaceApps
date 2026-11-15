@@ -132,6 +132,11 @@ function EventDirector.start()
 	local handlers: { [string]: (def: any, my: number) -> () } = {
 		DustStorm = function(def, my)
 			command:Fire("dustStorm", def.duration)
+			-- the dust weather (real REMS data card, less sunlight); panels get dirty when it ends
+			local weather = script.Parent:FindFirstChild("Weather")
+			if weather and weather:IsA("ModuleScript") then
+				(require(weather) :: any).hold("dust", def.duration)
+			end
 			setPhase("DustStorm", "active", def.duration)
 			task.delay(def.duration, function()
 				if active.DustStorm and active.DustStorm.token == my then
