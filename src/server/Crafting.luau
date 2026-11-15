@@ -42,6 +42,25 @@ local sortRemote: RemoteEvent
 local store: Instance
 local bags: { [Player]: Bag } = {}
 local sessions: { [Player]: SortSession } = {}
+local pickedOnce: { [Player]: boolean } = {}
+
+-- The first sample a player picks up counts for the Studio scripts too: MB_Tutorial step
+-- "Collect a rock sample" waits for MB_Notify "sample_got", MB_Achievements gives "FirstSample".
+-- (Their own science rocks, Workspace.MB_Samples, were removed on 2026-11-15.)
+local function firstPickup(player: Player)
+	if pickedOnce[player] then
+		return
+	end
+	pickedOnce[player] = true
+	local mbNotify = ReplicatedStorage:FindFirstChild("MB_Notify")
+	if mbNotify and mbNotify:IsA("RemoteEvent") then
+		mbNotify:FireClient(player, "sample_got")
+	end
+	local award = ServerStorage:FindFirstChild("MB_AwardAchievement")
+	if award and award:IsA("BindableEvent") then
+		award:Fire(player, "FirstSample")
+	end
+end
 
 local drillFolder: Folder
 local drillModel: Model? = nil
@@ -141,6 +160,7 @@ local function bindSample(sample: Instance)
 		player:SetAttribute("BagSamples", n + 1)
 		sample:Destroy()
 		notify:FireClient(player, "craft.toast.picked", { n = n + 1, max = CraftConfig.BagSize })
+		firstPickup(player)
 	end)
 end
 
@@ -522,6 +542,7 @@ function Crafting.start()
 	Players.PlayerRemoving:Connect(function(player)
 		bags[player] = nil
 		sessions[player] = nil
+		pickedOnce[player] = nil
 		if carrier == player then
 			-- the drill goes back to where it last stood
 			carrier = nil
