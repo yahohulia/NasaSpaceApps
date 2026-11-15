@@ -30,6 +30,7 @@ type Session = {
 	pads: { Vector2 }, -- contact positions on the board, 0..1
 	state: Joint.State,
 	perfect: number,
+	shiny: { boolean }, -- per contact: let go in time
 	retries: number,
 	expires: number,
 	lease: number,
@@ -142,7 +143,7 @@ local function build(origin: CFrame)
 	back.CanCollide = true
 
 	-- Iron controller with a small screen.
-	local unit = part(bench, "IronUnit", Vector3.new(1.6, 0.9, 1.2), at(-2.6, 3.8, 0.5), COLORS.dark)
+	part(bench, "IronUnit", Vector3.new(1.6, 0.9, 1.2), at(-2.6, 3.8, 0.5), COLORS.dark)
 	local screenPart = part(bench, "Screen", Vector3.new(1.1, 0.4, 0.05), at(-2.6, 3.95, -0.12), Color3.new(0, 0, 0))
 	screenPart.Material = Enum.Material.Neon
 	screenPart.Color = Color3.fromRGB(10, 30, 20)
@@ -222,13 +223,26 @@ local function build(origin: CFrame)
 	part(board, "Pcb", Vector3.new(1.6, 0.06, 1.1), boardCf, COLORS.green)
 	part(board, "Chip", Vector3.new(0.5, 0.06, 0.35), boardCf * CFrame.new(0, 0.06, 0.15), COLORS.dark)
 	for i = 1, 4 do
-		part(board, "Pad", Vector3.new(0.14, 0.04, 0.14), boardCf * CFrame.new(-0.5 + (i - 1) / 3, 0.05, -0.3), COLORS.gold)
+		part(
+			board,
+			"Pad",
+			Vector3.new(0.14, 0.04, 0.14),
+			boardCf * CFrame.new(-0.5 + (i - 1) / 3, 0.05, -0.3),
+			COLORS.gold
+		)
 	end
 	board.Parent = bench
 
 	-- Sponge to clean the tip, a solder spool, a lamp.
 	part(bench, "SpongeTray", Vector3.new(0.9, 0.1, 0.7), at(-2.6, 3.4, -0.9), COLORS.dark)
-	part(bench, "Sponge", Vector3.new(0.7, 0.22, 0.5), at(-2.6, 3.55, -0.9), Color3.fromRGB(240, 210, 70), Enum.Material.Foil)
+	part(
+		bench,
+		"Sponge",
+		Vector3.new(0.7, 0.22, 0.5),
+		at(-2.6, 3.55, -0.9),
+		Color3.fromRGB(240, 210, 70),
+		Enum.Material.Foil
+	)
 	part(
 		bench,
 		"SolderSpool",
@@ -240,7 +254,14 @@ local function build(origin: CFrame)
 	)
 	part(bench, "LampPost", Vector3.new(0.12, 2.2, 0.12), at(3.4, 4.45, 1), COLORS.dark)
 	part(bench, "LampArm", Vector3.new(0.12, 0.12, 1.6), at(3.4, 5.5, 0.25), COLORS.dark)
-	local lampHead = part(bench, "LampHead", Vector3.new(0.7, 0.25, 0.7), at(3.4, 5.4, -0.5), Color3.fromRGB(255, 244, 214), Enum.Material.Neon)
+	local lampHead = part(
+		bench,
+		"LampHead",
+		Vector3.new(0.7, 0.25, 0.7),
+		at(3.4, 5.4, -0.5),
+		Color3.fromRGB(255, 244, 214),
+		Enum.Material.Neon
+	)
 	local spot = Instance.new("SpotLight")
 	spot.Face = Enum.NormalId.Bottom
 	spot.Angle = 70
@@ -414,6 +435,7 @@ local function send(s: Session)
 		fill = s.state.fill,
 		reason = s.state.reason,
 		perfect = s.perfect,
+		shiny = s.shiny,
 		stars = stars(s),
 	})
 end
@@ -430,19 +452,21 @@ local function close(player: Player)
 	end
 end
 
--- Random contact spots on the board: a 4x2 grid below the chip, shuffled, slightly jittered.
+-- Random contact spots on the board: two staggered rows below the chip (so straight traces up to
+-- the chip never cross another contact), shuffled, slightly jittered.
 local rng = Random.new()
 local function layoutPads(count: number): { Vector2 }
 	local spots = {}
-	for row = 0, 1 do
-		for col = 0, 3 do
-			table.insert(spots, Vector2.new(0.14 + col * 0.24, 0.6 + row * 0.22))
-		end
+	for col = 0, 3 do
+		table.insert(spots, Vector2.new(0.14 + col * 0.24, 0.58))
+	end
+	for col = 0, 2 do
+		table.insert(spots, Vector2.new(0.26 + col * 0.24, 0.82))
 	end
 	local pads = {}
 	for _ = 1, math.min(count, #spots) do
 		local spot = table.remove(spots, rng:NextInteger(1, #spots)) :: Vector2
-		table.insert(pads, spot + Vector2.new(rng:NextNumber(-0.03, 0.03), rng:NextNumber(-0.02, 0.02)))
+		table.insert(pads, spot + Vector2.new(rng:NextNumber(-0.02, 0.02), rng:NextNumber(-0.02, 0.02)))
 	end
 	return pads
 end
@@ -482,6 +506,7 @@ function SolderStation.open(player: Player)
 		pads = layoutPads(def.joints),
 		state = Joint.new(),
 		perfect = 0,
+		shiny = {},
 		retries = 0,
 		expires = os.clock() + Config.Timeout,
 		lease = 0,
@@ -562,6 +587,7 @@ local function step(dt: number)
 		if s.state.perfect then
 			s.perfect += 1
 		end
+		s.shiny[s.joint] = s.state.perfect
 		s.joint += 1
 		s.state = Joint.new()
 		if s.joint > s.joints then

@@ -50,7 +50,14 @@ local function frame(parent: Instance, name: string, pos: UDim2, size: UDim2, co
 	return f
 end
 
-local function text(parent: Instance, name: string, pos: UDim2, size: UDim2, content: string, maxSize: number?): TextLabel
+local function text(
+	parent: Instance,
+	name: string,
+	pos: UDim2,
+	size: UDim2,
+	content: string,
+	maxSize: number?
+): TextLabel
 	local t = Instance.new("TextLabel")
 	t.Name = name
 	t.Position = pos
@@ -69,7 +76,14 @@ local function text(parent: Instance, name: string, pos: UDim2, size: UDim2, con
 	return t
 end
 
-local function button(parent: Instance, name: string, pos: UDim2, size: UDim2, content: string, color: Color3): TextButton
+local function button(
+	parent: Instance,
+	name: string,
+	pos: UDim2,
+	size: UDim2,
+	content: string,
+	color: Color3
+): TextButton
 	local b = Instance.new("TextButton")
 	b.Name = name
 	b.Position = pos
@@ -131,7 +145,10 @@ function SolderClient.start()
 		local kind, fixed = carrying()
 		carry.Visible = kind ~= nil
 		if kind then
-			carry.Text = t(if fixed then "solder.carry.fixed" else "solder.carry.broken", { machine = t("solder.board." .. kind) })
+			carry.Text = t(
+				if fixed then "solder.carry.fixed" else "solder.carry.broken",
+				{ machine = t("solder.board." .. kind) }
+			)
 			carryStroke.Color = if fixed then C.melt else C.glow
 		end
 		-- Only a player with a broken board sees "Fix the board" at the bench (local change).
@@ -164,8 +181,14 @@ function SolderClient.start()
 	limit.Parent = panel
 	local title = text(panel, "Title", UDim2.fromScale(0.04, 0.03), UDim2.fromScale(0.6, 0.07), t("solder.title"), 28)
 	title.TextXAlignment = Enum.TextXAlignment.Left
-	local closeButton =
-		button(panel, "Close", UDim2.fromScale(0.86, 0.03), UDim2.fromScale(0.1, 0.07), t("solder.close"), Color3.fromRGB(70, 80, 92))
+	local closeButton = button(
+		panel,
+		"Close",
+		UDim2.fromScale(0.86, 0.03),
+		UDim2.fromScale(0.1, 0.07),
+		t("solder.close"),
+		Color3.fromRGB(70, 80, 92)
+	)
 	closeButton.Modal = true
 
 	-- Joint progress: one circle per contact, a star for a shiny joint.
@@ -184,12 +207,19 @@ function SolderClient.start()
 	local edge = Instance.new("UIStroke")
 	edge.Color, edge.Thickness = C.pcbEdge, 4
 	edge.Parent = boardArea
-	local chip = frame(boardArea, "Chip", UDim2.fromScale(0.32, 0.08), UDim2.fromScale(0.36, 0.26), Color3.fromRGB(26, 30, 34))
+	local chip =
+		frame(boardArea, "Chip", UDim2.fromScale(0.08, 0.08), UDim2.fromScale(0.84, 0.24), Color3.fromRGB(26, 30, 34))
 	round(chip, 6)
-	text(chip, "Marking", UDim2.fromScale(0.05, 0.1), UDim2.fromScale(0.9, 0.45), t("solder.chip"), 18)
+	text(chip, "Marking", UDim2.fromScale(0.25, 0.1), UDim2.fromScale(0.5, 0.45), t("solder.chip"), 18)
 	local leds: { Frame } = {}
 	for i = 1, 4 do
-		local led = frame(chip, "Led" .. i, UDim2.fromScale(0.12 + (i - 1) * 0.21, 0.66), UDim2.fromScale(0.13, 0.2), Color3.fromRGB(60, 60, 60))
+		local led = frame(
+			chip,
+			"Led" .. i,
+			UDim2.fromScale(0.3 + (i - 1) * 0.11, 0.66),
+			UDim2.fromScale(0.07, 0.2),
+			Color3.fromRGB(60, 60, 60)
+		)
 		round(led)
 		table.insert(leds, led)
 	end
@@ -204,19 +234,22 @@ function SolderClient.start()
 	letGoStroke.Parent = letGo
 
 	-- The iron: a handle and a tip that hovers over the contact while held.
-	local iron = frame(boardArea, "Iron", UDim2.fromScale(0, 0), UDim2.fromScale(0.05, 0.36), Color3.fromRGB(40, 120, 200))
+	local iron =
+		frame(boardArea, "Iron", UDim2.fromScale(0, 0), UDim2.fromScale(0.05, 0.36), Color3.fromRGB(40, 120, 200))
 	iron.AnchorPoint = Vector2.new(0.5, 1)
 	iron.Rotation = 30
 	iron.ZIndex = 6
 	iron.Visible = false
 	round(iron, 6)
-	local ironTip = frame(iron, "Tip", UDim2.fromScale(0.3, 0.92), UDim2.fromScale(0.4, 0.25), Color3.fromRGB(180, 180, 185))
+	local ironTip =
+		frame(iron, "Tip", UDim2.fromScale(0.3, 0.92), UDim2.fromScale(0.4, 0.25), Color3.fromRGB(180, 180, 185))
 	ironTip.ZIndex = 6
 	round(ironTip, 3)
 
 	-- Heat meter.
 	text(panel, "HeatTitle", UDim2.fromScale(0.7, 0.19), UDim2.fromScale(0.26, 0.05), t("solder.heat"), 20)
-	local meter = frame(panel, "HeatMeter", UDim2.fromScale(0.74, 0.25), UDim2.fromScale(0.07, 0.5), Color3.fromRGB(44, 52, 60))
+	local meter =
+		frame(panel, "HeatMeter", UDim2.fromScale(0.74, 0.25), UDim2.fromScale(0.07, 0.5), Color3.fromRGB(44, 52, 60))
 	round(meter, 10)
 	local function zone(name: string, from: number, to: number, color: Color3)
 		local z = frame(meter, name, UDim2.fromScale(0, 1 - to), UDim2.fromScale(1, to - from), color)
@@ -229,7 +262,14 @@ function SolderClient.start()
 	heat.AnchorPoint = Vector2.new(0, 1)
 	round(heat, 6)
 	local function zoneLabel(key: string, y: number, color: Color3)
-		local l = text(panel, key, UDim2.fromScale(0.82, 0.25 + 0.5 * (1 - y) - 0.025), UDim2.fromScale(0.15, 0.05), t(key), 16)
+		local l = text(
+			panel,
+			key,
+			UDim2.fromScale(0.82, 0.25 + 0.5 * (1 - y) - 0.025),
+			UDim2.fromScale(0.15, 0.05),
+			t(key),
+			16
+		)
 		l.TextColor3 = color
 		l.TextXAlignment = Enum.TextXAlignment.Left
 	end
@@ -239,7 +279,8 @@ function SolderClient.start()
 
 	-- Solder fill bar under the board.
 	text(panel, "FillTitle", UDim2.fromScale(0.04, 0.76), UDim2.fromScale(0.16, 0.05), t("solder.fill"), 18)
-	local fillTrack = frame(panel, "FillTrack", UDim2.fromScale(0.21, 0.775), UDim2.fromScale(0.45, 0.03), Color3.fromRGB(44, 52, 60))
+	local fillTrack =
+		frame(panel, "FillTrack", UDim2.fromScale(0.21, 0.775), UDim2.fromScale(0.45, 0.03), Color3.fromRGB(44, 52, 60))
 	round(fillTrack, 6)
 	local fillBar = frame(fillTrack, "Fill", UDim2.fromScale(0, 0), UDim2.fromScale(0, 1), C.solder)
 	round(fillBar, 6)
@@ -257,17 +298,26 @@ function SolderClient.start()
 	howTo.ZIndex = 20
 	howTo.Visible = false
 	round(howTo, 16)
-	local howTitle = text(howTo, "Title", UDim2.fromScale(0.1, 0.08), UDim2.fromScale(0.8, 0.1), t("solder.how.title"), 34)
+	local howTitle =
+		text(howTo, "Title", UDim2.fromScale(0.1, 0.08), UDim2.fromScale(0.8, 0.1), t("solder.how.title"), 34)
 	howTitle.ZIndex = 21
 	for i = 1, 3 do
-		local step = text(howTo, "Step" .. i, UDim2.fromScale(0.1, 0.22 + (i - 1) * 0.17), UDim2.fromScale(0.8, 0.13), t("solder.how." .. i), 24)
+		local step = text(
+			howTo,
+			"Step" .. i,
+			UDim2.fromScale(0.1, 0.22 + (i - 1) * 0.17),
+			UDim2.fromScale(0.8, 0.13),
+			t("solder.how." .. i),
+			24
+		)
 		step.TextXAlignment = Enum.TextXAlignment.Left
 		step.ZIndex = 21
 	end
 	local note = text(howTo, "Note", UDim2.fromScale(0.1, 0.72), UDim2.fromScale(0.8, 0.06), t("solder.simulation"), 16)
 	note.TextColor3 = C.dim
 	note.ZIndex = 21
-	local gotIt = button(howTo, "GotIt", UDim2.fromScale(0.35, 0.82), UDim2.fromScale(0.3, 0.1), t("solder.how.ok"), C.button)
+	local gotIt =
+		button(howTo, "GotIt", UDim2.fromScale(0.35, 0.82), UDim2.fromScale(0.3, 0.1), t("solder.how.ok"), C.button)
 	gotIt.ZIndex = 21
 	local seenHowTo = false
 	gotIt.Activated:Connect(function()
@@ -318,7 +368,7 @@ function SolderClient.start()
 		remote:FireServer(id, "hold")
 		local pad = pads[joint]
 		if pad then
-			iron.Position = UDim2.new(pad.Position.X.Scale + 0.02, 0, pad.Position.Y.Scale - 0.02, 0)
+			iron.Position = UDim2.fromScale(pad.Position.X.Scale + 0.02, pad.Position.Y.Scale - 0.02)
 			iron.Visible = true
 		end
 	end
@@ -335,18 +385,15 @@ function SolderClient.start()
 	local function buildBoard(padSpots: { Vector2 })
 		clearBoard()
 		for i, spot in padSpots do
-			-- Copper trace from the chip down to the contact.
-			local pinX = 0.36 + (i - 1) * (0.28 / math.max(1, #padSpots - 1))
-			local trace = frame(boardArea, "Trace" .. i, UDim2.fromScale(pinX, 0.34), UDim2.fromScale(0.012, spot.Y - 0.34), C.copper)
-			table.insert(traces, trace)
-			local across = frame(
+			-- Copper trace straight up from the contact to the chip.
+			local trace = frame(
 				boardArea,
-				"TraceX" .. i,
-				UDim2.fromScale(math.min(pinX, spot.X), spot.Y - 0.006),
-				UDim2.fromScale(math.abs(spot.X - pinX) + 0.012, 0.012),
+				"Trace" .. i,
+				UDim2.fromScale(spot.X - 0.006, 0.32),
+				UDim2.fromScale(0.012, spot.Y - 0.32),
 				C.copper
 			)
-			table.insert(traces, across)
+			table.insert(traces, trace)
 
 			local pad = Instance.new("TextButton")
 			pad.Name = "Contact" .. i
@@ -398,7 +445,8 @@ function SolderClient.start()
 	end
 
 	local function popup(at: GuiObject, content: string, color: Color3)
-		local p = text(boardArea, "Popup", at.Position - UDim2.fromScale(0.1, 0.12), UDim2.fromScale(0.2, 0.08), content, 26)
+		local p =
+			text(boardArea, "Popup", at.Position - UDim2.fromScale(0.1, 0.12), UDim2.fromScale(0.2, 0.08), content, 26)
 		p.TextColor3 = color
 		p.ZIndex = 9
 		local info = TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -501,7 +549,11 @@ function SolderClient.start()
 		-- A joint was finished since the last update.
 		if joint >= 1 and state.joint > joint and pads[joint] then
 			local shiny = state.perfect > perfect
-			popup(pads[joint], t(if shiny then "solder.pop.shiny" else "solder.pop.ok"), if shiny then C.star else C.text)
+			popup(
+				pads[joint],
+				t(if shiny then "solder.pop.shiny" else "solder.pop.ok"),
+				if shiny then C.star else C.text
+			)
 			release()
 		end
 		local previousPhase = phase
@@ -525,6 +577,8 @@ function SolderClient.start()
 		status.TextColor3 = statusColor[phase] or C.text
 		letGo.Visible = phase == "release"
 		actionButton.Visible = phase == "test" or phase == "done"
+		-- Leave room for the button on the right.
+		status.Size = UDim2.fromScale(if actionButton.Visible then 0.62 else 0.92, 0.07)
 		actionButton.Text = t(if phase == "done" then "solder.done" else "solder.test")
 		hint.Text = if phase == "done"
 			then t("solder.carry.fixed", { machine = t("solder.board." .. state.kind) })
@@ -548,8 +602,13 @@ function SolderClient.start()
 			bead.Visible = size > 0 and (finished or state.fill > 0)
 			local dot = dots[i]
 			if dot then
-				dot.Text = if finished then "✓" else tostring(i)
-				dot.BackgroundColor3 = if finished then C.button elseif current then Color3.fromRGB(150, 110, 40) else Color3.fromRGB(50, 60, 70)
+				local shiny = state.shiny[i] == true
+				dot.Text = if finished then (if shiny then "★" else "✓") else tostring(i)
+				dot.TextColor3 = if finished and shiny then C.star else C.text
+				dot.BackgroundColor3 = if finished
+					then C.button
+					elseif current then Color3.fromRGB(150, 110, 40)
+					else Color3.fromRGB(50, 60, 70)
 			end
 		end
 	end)
@@ -616,7 +675,9 @@ function SolderClient.start()
 				heartbeat = 0
 				remote:FireServer(id, "hold")
 			end
-			ironTip.BackgroundColor3 = if phase == "flow" or phase == "release" then C.hot else Color3.fromRGB(180, 180, 185)
+			ironTip.BackgroundColor3 = if phase == "flow" or phase == "release"
+				then C.hot
+				else Color3.fromRGB(180, 180, 185)
 			puffClock += dt
 			if pad and (phase == "flow" or phase == "release") and puffClock >= 0.15 then
 				puffClock = 0

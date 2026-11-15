@@ -1,7 +1,13 @@
 -- Run from the repository root with lune run tests/solder-joint.luau.
 local fs = require("@lune/fs")
 local luau = require("@lune/luau")
-local config = luau.load(fs.readFile("src/shared/SolderConfig.luau"))()
+-- SolderConfig holds the bench CFrame; lune has no CFrame, so give it a stand-in.
+local cframe = {
+	new = function()
+		return {}
+	end,
+}
+local config = luau.load(fs.readFile("src/shared/SolderConfig.luau"), { environment = { CFrame = cframe } })()
 local source = fs.readFile("src/shared/SolderJoint.luau"):gsub("require%(script.Parent.SolderConfig%)", "...")
 local joint = luau.load(source)(config)
 local function advance(state, seconds)
