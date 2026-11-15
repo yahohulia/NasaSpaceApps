@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local CropModels = require(ReplicatedStorage.Shared.CropModels)
 local Strings = require(ReplicatedStorage.Shared.Strings)
+local Style = require(ReplicatedStorage.Shared.NoticeStyle)
 
 local CraftClient = {}
 
@@ -73,10 +74,10 @@ function CraftClient.start()
 	toast.BackgroundColor3 = Color3.fromRGB(34, 40, 58)
 	toast.BackgroundTransparency = 1
 	toast.TextTransparency = 1
-	toast.Font = Enum.Font.GothamBold
-	toast.TextSize = 16
+	toast.FontFace = Style.Bold
+	toast.TextSize = Style.TextSize
 	toast.TextWrapped = true
-	toast.TextColor3 = Color3.fromRGB(255, 236, 170)
+	toast.TextColor3 = Style.TextColor
 	toast.Parent = gui
 	local toastCorner = Instance.new("UICorner")
 	toastCorner.CornerRadius = UDim.new(0, 6)

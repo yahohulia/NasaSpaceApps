@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Strings = require(ReplicatedStorage.Shared.Strings)
+local Style = require(ReplicatedStorage.Shared.NoticeStyle)
 
 local SHOW_SECONDS = 5
 local KIND_COLOR = {
@@ -34,9 +35,9 @@ function NoticeClient.start()
 	box.AutomaticSize = Enum.AutomaticSize.Y
 	box.BackgroundColor3 = Color3.fromRGB(27, 35, 48)
 	box.BackgroundTransparency = 0.05
-	box.Font = Enum.Font.GothamBold
-	box.TextSize = 18
-	box.TextColor3 = Color3.fromRGB(240, 244, 248)
+	box.FontFace = Style.Bold
+	box.TextSize = Style.TextSize
+	box.TextColor3 = Style.TextColor -- the kind of toast shows only in the border colour
 	box.TextWrapped = true
 	box.Text = ""
 	box.Parent = gui
