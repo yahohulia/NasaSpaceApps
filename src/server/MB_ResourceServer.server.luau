@@ -158,12 +158,32 @@ local function isUnderRoof(root: BasePart, zone: BasePart): boolean
 	return root.Position.Y - floorY <= MAX_UNCOVERED_HEIGHT
 end
 
+-- The zone boxes do not cover every room edge (a strip along the central corridor wall, the rim of
+-- the farm dome, ...). There a player is still under the base: a base mesh (Workspace.MarsBase) is
+-- right above the head. Without this, running along a wall made the player "outside" for seconds
+-- and the suit rescue (Suit.luau) teleported them to the airlock.
+local BASE_MODEL = "MarsBase"
+local COVER_HEIGHT = 40 -- studs to look up for the base ceiling
+
+local function coveredByBase(root: BasePart): boolean
+	local base = workspace:FindFirstChild(BASE_MODEL)
+	if not base then
+		return false
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { base }
+	return workspace:Raycast(root.Position, Vector3.new(0, COVER_HEIGHT, 0), params) ~= nil
+end
+
 local function playersInside(): { [Player]: boolean }
 	local inside = {}
 	for _, player in Players:GetPlayers() do
 		local root = rootOf(player)
 		local zone = root and zoneAt(root.Position)
 		if root and zone and isUnderRoof(root, zone) then
+			inside[player] = true
+		elseif root and not zone and coveredByBase(root) then
 			inside[player] = true
 		end
 	end
