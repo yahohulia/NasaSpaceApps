@@ -9,18 +9,19 @@ permalink: sol-sandbox/handoffs/2026-11-15-1053-space-suit-visor
 
 # Handoff: Space suit and visor 2026-11-15 10:53
 
-Скафандр (шафка `SuitLocker`, шолом + рюкзак) і візор шолома (пил, запотівання, рамка). Код написаний і перевірений у Play Solo, але **ще не закомічений**.
-Space suit (locker, helmet, backpack) and helmet visor (dust, fog, frame). Code works in Play Solo; **not committed yet**.
+Скафандр (шафка `SuitLocker`, шолом + рюкзак) і візор шолома (пил, запотівання, рамка). Код у коміті `8214c37` на гілці `chore/roblox-env` (злито з `main` у `6e32f62`, правка даху в `58813c3`), гілку запушено; PR у `main` ще треба відкрити.
+Space suit (locker, helmet, backpack) and helmet visor (dust, fog, frame). Committed and pushed on `chore/roblox-env`; PR to `main` still to open.
 
 ## Done
 - `selene src`: 0 errors (2 warnings in `IceMapClient`). `rojo build`: OK.
 - Play Solo (2026-11-15): server and client start with no errors from our scripts; `Suit.set(player, true/false)` dresses and undresses the player (`SpaceSuit` + `SuitStash`, attribute `SuitOn`); the visor frame shows and the HUD stays on top.
 
 ## Next
-1. Commit the suit/visor work (only when the human asks). Decide what to do with `image.png` (modified), `542.png` and `NASA_Space_Apps_Kyiv_2026_Mentor_Slots.xlsx`; they probably should not be committed.
-2. `stylua --check src` fails on `src/client/IceMapClient.luau` and `src/server/Crafting.luau` (from PR #3, owner Mechanics). Run `stylua` on them after agreeing with the owner, otherwise `main` stays red.
-3. Not tested yet: the real locker prompt, the airlock refusing a player without the suit (`suit.need`), the rescue after `RESCUE_SECONDS` outside, the R key that wipes dust, fog when `SuitO2` is low.
-4. Strings are in `src/shared/i18n/en.luau` / `uk.luau` (keys `suit.*`, visor). Check them with `kid-copy`.
+1. Open the PR `chore/roblox-env` → `main` on GitHub and merge it; then teammates `git pull` (their Rojo picks the files up).
+2. Only one person can sync Rojo in Team Create (today: gods4y). The others commit and push.
+3. Remove the Studio copy `ServerScriptService.MB_ResourceServer`: since PR #4 it also comes from git (`src/server/MB_ResourceServer.server.luau`), so two copies may run.
+4. Sparky dialog: test in Play after the merge (was not synced to Studio), then add the AI step (`SparkyTalk` remote, server side).
+5. Not tested yet: the real suit locker prompt, the rescue after `RESCUE_SECONDS` outside, the R key that wipes dust, fog when `SuitO2` is low.
 
 ## Files touched
 - `src/server/Suit.luau` (new): locker prompt, dress/undress, rescue back to the airlock.
