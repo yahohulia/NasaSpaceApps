@@ -235,8 +235,8 @@ function MissionBoardClient.start()
 	local function showDebrief()
 		local p = payload
 		local d = p and p.debrief
-		if not d or d.sol == shownDebrief then
-			return
+		if not d or d.sol == shownDebrief or (p and p.failed) then
+			return -- nothing new, or wait until the "Mission stopped" card is gone
 		end
 		shownDebrief = d.sol
 		clear(debriefCard)
@@ -290,7 +290,8 @@ function MissionBoardClient.start()
 		clear(failCard)
 		label(failCard, Strings.get("mission.failed.title", lang), 24, BOLD, ACCENT, 1)
 		label(failCard, Strings.get("mission.failed." .. reason, lang), 17, FONT, TEXT, 2)
-		local supplies = button(failCard, Strings.get("mission.failed.supplies", lang), GOOD, 3)
+		local supplies =
+			button(failCard, Strings.get("mission.failed.supplies", lang, { h = MissionPlan.EMERGENCY_HOURS }), GOOD, 3)
 		local restart = button(failCard, Strings.get("mission.failed.restart", lang), DIM, 4)
 		supplies.Modal = true -- unlocks the first-person mouse so the buttons can be clicked
 		restart.Modal = true
@@ -312,7 +313,9 @@ function MissionBoardClient.start()
 			return
 		end
 		local p = decoded :: Payload
-		if payload and p.sol < payload.sol then
+		if not payload and p.debrief then
+			shownDebrief = p.debrief.sol -- joined mid-mission: don't pop up an old debrief
+		elseif payload and p.sol < payload.sol then
 			shownDebrief = 0 -- a new mission: debriefs start over
 		end
 		payload = p

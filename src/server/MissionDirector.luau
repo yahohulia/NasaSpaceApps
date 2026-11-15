@@ -17,11 +17,13 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Horizons = require(script.Parent.Horizons)
+local Notice = require(script.Parent.Notice)
 local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 local WaterPump = require(script.Parent.WaterPump)
 
 local PUMP_BREAK_HOUR = 13 -- game value, TODO balance: sol 2, after the morning dust storm
 local DIRTY_PANELS = 0.9 -- PanelEfficiency below this = the dust storm left the panels dirty
+local SOLO_DOSE_WARN = 0.8 -- game value, TODO balance: share of the dose limit for the solo warning
 
 local MissionDirector = {}
 
@@ -72,6 +74,8 @@ function MissionDirector.start()
 	local debrief: Debrief? = nil
 	local failed: string? = nil
 	local pumpBroken = false
+	local stormWarned: { [Player]: number } = {} -- StormStartsAt of the storm this player was warned about
+	local soloWarned: { [Player]: boolean } = {}
 	-- What was seen during the sol, for "fix it again" objectives.
 	local panelsWereDirty, radarWasBroken, o2WasBroken = false, false, false
 	local samplesAtStart = 0
@@ -157,6 +161,8 @@ function MissionDirector.start()
 		debrief = nil
 		failed = nil
 		pumpBroken = false
+		table.clear(stormWarned)
+		table.clear(soloWarned)
 		openSol(num(baseState, "Sol") > 0 and num(baseState, "Sol") or 1)
 	end
 
@@ -193,6 +199,8 @@ function MissionDirector.start()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		stormWarned[player] = nil
+		soloWarned[player] = nil
 		iceSeen[player] = nil
 	end)
 
@@ -202,9 +210,14 @@ function MissionDirector.start()
 	while true do
 		task.wait(1)
 		local nowSol = num(baseState, "Sol")
-		if nowSol > sol and nowSol <= #MissionPlan.sols then
+		if nowSol > sol then
 			closeSol()
-			openSol(nowSol)
+			if nowSol <= #MissionPlan.sols then
+				openSol(nowSol)
+			else
+				sol = nowSol -- past the last sol (launch window missed): no board, the debrief stays
+				publish()
+			end
 		end
 		local clock = num(baseState, "ClockTime")
 
@@ -226,6 +239,23 @@ function MissionDirector.start()
 				broken.storm = true
 			end
 		end
+		-- Early warnings, so nobody (above all a solo player) reaches the dose limit, which keeps
+		-- them inside for the rest of the mission and away from the samples.
+		local stormAt = num(baseState, "StormStartsAt")
+		local info = ReplicatedStorage:FindFirstChild("RadiationInfo")
+		local limit = if info then num(info, "Limit") else 0
+		local solo = #Players:GetPlayers() == 1
+		for _, player in Players:GetPlayers() do
+			if stormAt > 0 and stormWarned[player] ~= stormAt and player:GetAttribute("IsInside") == false then
+				stormWarned[player] = stormAt
+				Notice.send(player, "mission.storm.hide", "alert")
+			end
+			if solo and limit > 0 and not soloWarned[player] and num(player, "Dose") >= limit * SOLO_DOSE_WARN then
+				soloWarned[player] = true
+				Notice.send(player, "mission.dose.solo", "warn")
+			end
+		end
+
 		local efficiency = baseState:GetAttribute("PanelEfficiency")
 		if typeof(efficiency) == "number" then
 			if efficiency < DIRTY_PANELS then
