@@ -141,7 +141,7 @@ Events.Config = {
 	AUTO_COLLAPSE = 8,
 	FACT_TIME = 5,
 	DONE_FLASH = 2,
-	TOGGLE_KEY = Enum.KeyCode.G,
+	TOGGLE_KEY = Enum.KeyCode.T, -- показать полный текст событий (и погоды) по очереди / свернуть
 	UI_TOP = 0.27, -- где по высоте экрана начинается блок событий (под баблом Sol и шкалой воздуха)
 	UI_WIDTH = 0.36, -- ширина блока (доля экрана)
 	UI_HEIGHT = 0.28, -- высота блока; UI_TOP + UI_HEIGHT должно быть <= 0.55 (низ экрана — для пальцев)

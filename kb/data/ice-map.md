@@ -25,6 +25,8 @@ permalink: sol-sandbox/data/ice-map
 - [fact] У грі: `Workspace.IceMapScreen` (тег `IceMapConsole`) на середньому екрані пульта в науковій станції (78, 7.9, −60.5); код `src/client/IceMapClient.luau` + `src/shared/IceMapConfig.luau`, тексти `icemap.*`. Три рівні: увесь Марс → Arcadia Planitia (біла рамка NASA, позначка «Ми тут») → наша зона з родовищами A/B/C і їхнім «шансом льоду».
 - [fact] Наша ігрова зона (~460 м) значно менша за один піксель цієї карти, тож справжня глибина однакова для всіх наших родовищ — різниця між ними лише в ігровій оцінці.
 
+- [fact] 2026-11-15: картинку перезавантажила власниця гри (Maria_Strawberi, user 1751145905) — `rbxassetid://85333712790591` (тип Image, пройшов модерацію, у плейсі вантажиться: PreloadAsync = Success). Тепер `IceMapConfig.Image` і настінний екран `Workspace.IceMapScreen` беруть оригінал, а не мініатюру `rbxthumb`. На екрані підпис: «Image: NASA/JPL-Caltech/ASU · ARCHIVED · 2019-12-10». Офіційна назва: «A Water Ice Map for Mars» (PIA23514), https://science.nasa.gov/photojournal/a-water-ice-map-for-mars — дані Mars Reconnaissance Orbiter (MCS), Mars Odyssey (THEMIS) і Mars Global Surveyor.
+
 ## Relations
 - part_of [[NASA data sources]]
 - see_also [[Drill crafting]]

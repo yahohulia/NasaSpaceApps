@@ -335,8 +335,9 @@ local stormTime = new("TextLabel", {
 	Parent = stormPill,
 })
 
--- Messages under the centre column.
+-- Messages under the centre column (EventUI leaves room for it under the event card).
 local toast = new("TextLabel", {
+	Name = "Toast",
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 150),
 	AutomaticSize = Enum.AutomaticSize.Y,
@@ -596,6 +597,27 @@ local function hideOldHud()
 	end
 end
 
+-- Top of the team's message near the bottom (NoticeClient "Toast"), screen space; nil when it is not shown.
+local function noticeTop(): number?
+	local notice = playerGui:FindFirstChild("Toast")
+	local nbox = notice and notice:FindFirstChild("Box")
+	if notice and notice:IsA("ScreenGui") and notice.Enabled and nbox and nbox:IsA("GuiObject") and nbox.Visible then
+		return nbox.AbsolutePosition.Y
+	end
+	return nil
+end
+
+-- Lowest y the centre stack (weather card + our message) may reach: the upper half, above the team's message.
+local function stackBottom(): number
+	local camera = workspace.CurrentCamera
+	local bottom = (if camera then camera.ViewportSize.Y else 600) * 0.55
+	local top = noticeTop()
+	if top then
+		bottom = math.min(bottom, top - 8)
+	end
+	return bottom
+end
+
 local function placeWeatherCard(): number
 	local y = center.AbsolutePosition.Y + center.AbsoluteSize.Y + 10
 	local card = playerGui:FindFirstChild("WeatherCard")
@@ -605,7 +627,18 @@ local function placeWeatherCard(): number
 		box.Position = UDim2.new(0.5, 0, 0, y)
 		box.BackgroundColor3 = COLORS.pill
 		box.BackgroundTransparency = PILL_ALPHA
-		y += box.AbsoluteSize.Y + 10
+		-- Shrink the card (down to 60 %) when it would not fit above the team's message and our own message.
+		local fit = box:FindFirstChild("MB_Fit")
+		if not fit then
+			fit = Instance.new("UIScale")
+			fit.Name = "MB_Fit"
+			fit.Parent = box
+		end
+		local scale = fit :: UIScale
+		local natural = box.AbsoluteSize.Y / scale.Scale
+		local room = stackBottom() - y - (if toast.Visible then toast.AbsoluteSize.Y + 10 else 0)
+		scale.Scale = math.clamp(room / math.max(natural, 1), 0.6, 1)
+		y += natural * scale.Scale + 10
 	end
 	return y
 end
@@ -620,8 +653,13 @@ RunService.RenderStepped:Connect(function()
 	hideOldHud()
 	-- Messages go under the weather card and under the MB_EventUI block (it writes EventBottom).
 	local eventBottom = gui:GetAttribute("EventBottom")
-	toast.Position =
-		UDim2.new(0.5, 0, 0, math.max(placeWeatherCard(), if typeof(eventBottom) == "number" then eventBottom else 0))
+	local toastY = math.max(placeWeatherCard(), if typeof(eventBottom) == "number" then eventBottom else 0)
+	-- Never down onto the team's message near the bottom of the screen.
+	local nTop = noticeTop()
+	if nTop and toast.Visible then
+		toastY = math.min(toastY, nTop - 8 - toast.AbsoluteSize.Y)
+	end
+	toast.Position = UDim2.new(0.5, 0, 0, toastY)
 
 	local now = workspace:GetServerTimeNow()
 	local startsAt = num(baseState, "StormStartsAt")

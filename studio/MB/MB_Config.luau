@@ -76,7 +76,8 @@ Config.Actions = {
 		Food = 35,
 		Cooldown = 45, -- plants need time to grow back (shared by the crew)
 	},
-	Rest = { Tag = "MB_Bed", Text = "Rest", Object = "Bunk", Hold = 2, Fatigue = -60 },
+	-- Sleep in a bed: the player lies down for SleepSeconds and wakes up fully rested (MB_ResourceServer).
+	Rest = { Tag = "MB_Bed", Text = "Sleep", Object = "Bed", Hold = 1, SleepSeconds = 10 }, -- game values
 }
 Config.PromptDistance = 10
 

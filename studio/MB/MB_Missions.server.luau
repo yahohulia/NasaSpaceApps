@@ -65,21 +65,45 @@ local function paintDust(panel: Model)
 	local deck = panel.PrimaryPart
 	local p = deck and deck:FindFirstChild("MB_Prompt")
 	if p and p:IsA("ProximityPrompt") then
-		p.Enabled = dust > 0.15
+		p.Enabled = dust > 0.15 and panel:GetAttribute("Broken") ~= true -- a broken panel shows only "Repair panel"
 	end
+end
+
+-- Where the "Repair panel" prompt goes: Frame in the first panel models, Back in the new ones.
+local function repairPart(panel: Model): Instance?
+	return panel:FindFirstChild("Frame") or panel:FindFirstChild("Back") or panel.PrimaryPart
 end
 
 -- Marsquake damage: a broken panel glows red, gives no power and has a "Repair panel" prompt.
 local function setPanelBroken(panel: Model, broken: boolean)
 	panel:SetAttribute("Broken", broken)
-	local deck = panel.PrimaryPart
-	if deck then
-		deck.Color = if broken then Color3.fromRGB(200, 50, 40) else Color3.fromRGB(30, 45, 90)
+	-- Red glow over the whole panel (the new panel models have an invisible Deck, so recolouring it shows nothing).
+	local glow = panel:FindFirstChild("MB_BrokenGlow")
+	if broken and not glow then
+		local h = Instance.new("Highlight")
+		h.Name = "MB_BrokenGlow"
+		h.FillColor = Color3.fromRGB(220, 50, 40)
+		h.FillTransparency = 0.45
+		h.OutlineColor = Color3.fromRGB(255, 90, 70)
+		h.DepthMode = Enum.HighlightDepthMode.Occluded
+		h.Parent = panel
+	elseif not broken and glow then
+		glow:Destroy()
 	end
-	local frame = panel:FindFirstChild("Frame")
+	local frame = repairPart(panel)
 	local r = frame and frame:FindFirstChild("MB_RepairPrompt")
 	if r and r:IsA("ProximityPrompt") then
 		r.Enabled = broken
+	end
+	paintDust(panel) -- switches "Clean" off while broken, back on after the repair if there is dust
+
+	-- The team's wipe mini-game (MB_PanelCleaning) has its own "Clean" prompt on the deck. Both use E in the
+	-- same spot and Roblox shows only one, so it is off while the panel is broken; after the repair it follows
+	-- MB_PanelCleaning's rule again (on only while the panel is Dirty).
+	local deck = panel.PrimaryPart
+	local wipe = deck and deck:FindFirstChild("MB_CleanPrompt")
+	if wipe and wipe:IsA("ProximityPrompt") then
+		wipe.Enabled = not broken and panel:GetAttribute("Dirty") == true
 	end
 end
 
@@ -93,7 +117,7 @@ for _, panel in CollectionService:GetTagged("MB_Panel") do
 			notify:FireClient(player, "panel_clean")
 		end)
 		paintDust(panel)
-		local frame = panel:FindFirstChild("Frame")
+		local frame = repairPart(panel)
 		if frame then
 			local r = Instance.new("ProximityPrompt")
 			r.Name = "MB_RepairPrompt"
