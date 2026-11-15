@@ -9,15 +9,13 @@
 --
 -- Player attribute: CarryingBoard = "<kind>" (broken) or "<kind>:fixed"; nil = empty hands.
 -- Remote ReplicatedStorage.Solder: server -> client "state" / "close";
--- client -> server (sessionId, "start", contact) | (sessionId, "joint", contact, shiny) |
--- (sessionId, "test") | (sessionId, "close").
--- Each contact is a catch-the-drop game (SolderSlider) played on the client so it feels instant;
--- the server checks the order of contacts and that each one took a believable time.
+-- client -> server (sessionId, "hold" | "release" | "test" | "close").
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 
 local Config = require(ReplicatedStorage.Shared.SolderConfig)
+local Joint = require(ReplicatedStorage.Shared.SolderJoint)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 local Notice = require(script.Parent.Notice)
 
@@ -30,10 +28,13 @@ type Session = {
 	joints: number,
 	joint: number, -- the contact being soldered now; joints + 1 = all done
 	pads: { Vector2 }, -- contact positions on the board, 0..1
-	startedAt: number?, -- when the current contact's game started (nil = not started)
+	state: Joint.State,
 	perfect: number,
-	shiny: { boolean }, -- per contact: the drop was never lost
+	shiny: { boolean }, -- per contact: let go in time
+	retries: number,
 	expires: number,
+	lease: number,
+	lastInput: number,
 	done: boolean,
 }
 
@@ -589,18 +590,20 @@ local function showBench(active: Session?)
 		end
 	end
 	bench:SetAttribute("InUse", active ~= nil)
-	local hot = working and active ~= nil and active.startedAt ~= nil
+	local heat = if active then active.state.heat else 0
+	local hot = working and heat >= Config.MeltHeat
+	local phase = if active then active.state.phase else ""
 	tip.Material = if hot then Enum.Material.Neon else Enum.Material.Metal
 	tip.Color = if hot then COLORS.hot else Color3.fromRGB(150, 120, 70)
 	tipLight.Enabled = hot
-	tipSmoke.Enabled = hot
+	tipSmoke.Enabled = working and (phase == "flow" or phase == "release")
 	-- The ring glows green while the iron sits charged in its dock.
 	dockLight.Color = if working then Color3.fromRGB(50, 55, 60) else COLORS.ready
 	dockLight.Material = if working then Enum.Material.SmoothPlastic else Enum.Material.Neon
 	fanLed.Color = if working then COLORS.ready else Color3.fromRGB(40, 60, 40)
 	screen.Text = Strings.get(if working then "solder.bench.busy" else "solder.bench.ready", "en")
 	screen.TextColor3 = if working then COLORS.hot else COLORS.ready
-	heatBar.Size = UDim2.fromScale(if hot then 0.8 elseif working then 0.3 else 0, 1)
+	heatBar.Size = UDim2.fromScale(if working then heat else 0, 1)
 end
 
 -- Carried boards ------------------------------------------------------------------------------------
@@ -704,9 +707,9 @@ local function nearby(player: Player): boolean
 end
 
 local function stars(s: Session): number
-	if s.perfect >= s.joints - 1 then
+	if s.retries == 0 and s.perfect >= s.joints - 1 then
 		return 3
-	elseif s.perfect * 2 >= s.joints then
+	elseif s.retries <= 2 then
 		return 2
 	end
 	return 1
@@ -719,7 +722,10 @@ local function send(s: Session)
 		joints = s.joints,
 		joint = s.joint,
 		pads = s.pads,
-		phase = if s.done then "done" elseif s.joint > s.joints then "test" else "aim",
+		phase = if s.done then "done" else s.state.phase,
+		heat = s.state.heat,
+		fill = s.state.fill,
+		reason = s.state.reason,
 		perfect = s.perfect,
 		shiny = s.shiny,
 		stars = stars(s),
@@ -790,10 +796,13 @@ function SolderStation.open(player: Player)
 		joints = def.joints,
 		joint = 1,
 		pads = layoutPads(def.joints),
-		startedAt = nil,
+		state = Joint.new(),
 		perfect = 0,
 		shiny = {},
+		retries = 0,
 		expires = os.clock() + Config.Timeout,
+		lease = 0,
+		lastInput = 0,
 		done = false,
 	}
 	session = s
@@ -801,7 +810,7 @@ function SolderStation.open(player: Player)
 	send(s)
 end
 
-local function onEvent(player: Player, id: unknown, action: unknown, contact: unknown, shiny: unknown)
+local function onEvent(player: Player, id: unknown, action: unknown)
 	local s = session
 	if not s or s.player ~= player or id ~= s.id or type(action) ~= "string" then
 		return
@@ -814,24 +823,22 @@ local function onEvent(player: Player, id: unknown, action: unknown, contact: un
 		close(player)
 		return
 	end
+	if action == "release" then
+		s.state.holding = false
+		return
+	end
 	local now = os.clock()
-	if action == "start" and contact == s.joint and s.joint <= s.joints and not s.done then
-		s.startedAt = now
-		showBench(s)
-	elseif action == "joint" and contact == s.joint and s.startedAt ~= nil and not s.done then
-		-- A full contact takes a few seconds of catching; anything faster is not believable.
-		if now - (s.startedAt :: number) < Config.MinJointSeconds then
+	if now - s.lastInput < 0.05 then
+		return
+	end
+	s.lastInput = now
+	local phase = s.state.phase
+	if action == "hold" and s.joint <= s.joints and not s.done then
+		if phase == "retry" or phase == "cool" or phase == "solid" then
 			return
 		end
-		local wasShiny = shiny == true
-		if wasShiny then
-			s.perfect += 1
-		end
-		s.shiny[s.joint] = wasShiny
-		s.joint += 1
-		s.startedAt = nil
-		showBench(s)
-		send(s)
+		s.state.holding = true
+		s.lease = now + Config.HoldLease
 	elseif action == "test" and s.joint > s.joints and not s.done then
 		s.done = true
 		player:SetAttribute("CarryingBoard", boardAttr(s.kind, true))
@@ -847,8 +854,7 @@ local function onEvent(player: Player, id: unknown, action: unknown, contact: un
 	end
 end
 
--- Closes the session when the player walks away, takes too long or loses the board.
-local function step()
+local function step(dt: number)
 	local s = session
 	if not s then
 		return
@@ -858,6 +864,30 @@ local function step()
 		close(s.player)
 		return
 	end
+	if s.done or s.joint > s.joints then
+		return
+	end
+	if now > s.lease then
+		s.state.holding = false
+	end
+	local before = s.state.phase
+	Joint.step(s.state, math.min(dt, Config.HoldLease))
+	if s.state.phase == "retry" and before ~= "retry" then
+		s.retries += 1
+	end
+	if s.state.phase == "solid" then
+		if s.state.perfect then
+			s.perfect += 1
+		end
+		s.shiny[s.joint] = s.state.perfect
+		s.joint += 1
+		s.state = Joint.new()
+		if s.joint > s.joints then
+			s.state.phase = "test"
+		end
+	end
+	showBench(s)
+	send(s)
 end
 
 function SolderStation.start()
@@ -897,9 +927,12 @@ function SolderStation.start()
 	end)
 
 	task.spawn(function()
+		local previous = os.clock()
 		while true do
 			task.wait(Config.UpdateSeconds)
-			step()
+			local now = os.clock()
+			step(now - previous)
+			previous = now
 		end
 	end)
 end
