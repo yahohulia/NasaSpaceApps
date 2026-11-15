@@ -1,7 +1,8 @@
 -- Helmet visor while the player wears the space suit (Player attribute "SuitOn").
 -- Layers (back to front), all textures from scripts/visor-texture.mjs:
 --   dust  - Mars dust on the outside of the glass. Builds up outside (faster in a dust
---           storm); the player wipes it with R (or the on-screen button on touch).
+--           storm); the player wipes it with R (or the on-screen button on touch):
+--           a suit glove sweeps across the glass and leaves a smear that fades.
 --   fog   - breath condensation on the inside. Comes on each exhale and dries off;
 --           breathing gets faster when the suit's oxygen (MB "SuitO2") runs low.
 --   frame - the helmet shell around the visor, out of focus, with glass glare.
@@ -27,8 +28,16 @@ local DUST_SECONDS = 120 -- outside in calm weather: clean -> fully dusty
 local DUST_STORM_FACTOR = 4 -- dust storm makes it this many times faster
 local DUST_MAX = 0.85 -- strongest dust layer (1 - ImageTransparency)
 local DUST_HINT_AT = 0.45 -- remind the player to wipe at this level
-local WIPE_SECONDS = 0.55
+local WIPE_SECONDS = 1.0 -- one glove sweep across the glass
+local SMEAR_LEFT = 0.12 -- a light smear of dust stays after the sweep...
+local SMEAR_FADE = 1.2 -- ...and fades out in this many seconds
 local WIPE_ACTION = "WipeVisor"
+-- Suit glove colours (white suit, grey grip pads, orange cuff stripe).
+local GLOVE = Color3.fromRGB(232, 232, 226)
+local GLOVE_SHADE = Color3.fromRGB(176, 178, 176)
+local GRIP = Color3.fromRGB(112, 116, 122)
+local CUFF = Color3.fromRGB(150, 152, 156)
+local STRIPE = Color3.fromRGB(236, 112, 40)
 local GRADE = { TintColor = Color3.fromRGB(255, 246, 232), Contrast = 0.05, Saturation = -0.04 }
 local NO_GRADE = { TintColor = Color3.new(1, 1, 1), Contrast = 0, Saturation = 0 }
 
@@ -47,6 +56,79 @@ local function layer(parent: Instance, name: string, image: string, z: number): 
 	return label
 end
 
+local function rounded(
+	parent: Instance,
+	name: string,
+	color: Color3,
+	size: UDim2,
+	pos: UDim2,
+	radius: number,
+	z: number
+): Frame
+	local f = Instance.new("Frame")
+	f.Name = name
+	f.AnchorPoint = Vector2.new(0.5, 0.5)
+	f.Size = size
+	f.Position = pos
+	f.BackgroundColor3 = color
+	f.BorderSizePixel = 0
+	f.ZIndex = z
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(radius, 0)
+	corner.Parent = f
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(70, 72, 76)
+	stroke.Thickness = 2
+	stroke.Transparency = 0.35
+	stroke.Parent = f
+	f.Parent = parent
+	return f
+end
+
+-- The palm side of a suit glove, seen through the visor from inside, fingers up.
+-- Built from frames (no image asset). Size follows the screen height.
+local function makeGlove(parent: Instance, z: number): Frame
+	local hand = Instance.new("Frame")
+	hand.Name = "WipeGlove"
+	hand.AnchorPoint = Vector2.new(0.5, 0.35)
+	hand.Size = UDim2.fromScale(0.42, 0.42)
+	hand.BackgroundTransparency = 1
+	hand.Visible = false
+	hand.ZIndex = z
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 0.8
+	aspect.DominantAxis = Enum.DominantAxis.Height
+	aspect.Parent = hand
+	hand.Parent = parent
+
+	-- sleeve and cuff at the bottom
+	rounded(hand, "Sleeve", GLOVE_SHADE, UDim2.fromScale(0.62, 0.4), UDim2.fromScale(0.5, 0.95), 0.25, z)
+	rounded(hand, "Cuff", CUFF, UDim2.fromScale(0.66, 0.12), UDim2.fromScale(0.5, 0.74), 0.4, z + 1)
+	rounded(hand, "Stripe", STRIPE, UDim2.fromScale(0.66, 0.035), UDim2.fromScale(0.5, 0.74), 0.5, z + 2)
+	-- palm with a grip pad
+	local palm = rounded(hand, "Palm", GLOVE, UDim2.fromScale(0.64, 0.42), UDim2.fromScale(0.5, 0.5), 0.3, z + 1)
+	local shade = Instance.new("UIGradient")
+	shade.Rotation = 90
+	shade.Color = ColorSequence.new(GLOVE, GLOVE_SHADE)
+	shade.Parent = palm
+	rounded(hand, "Grip", GRIP, UDim2.fromScale(0.36, 0.2), UDim2.fromScale(0.52, 0.52), 0.35, z + 2)
+	-- four fingers and the thumb
+	local fingers = {
+		{ x = 0.29, h = 0.26, y = 0.2 },
+		{ x = 0.43, h = 0.3, y = 0.17 },
+		{ x = 0.57, h = 0.29, y = 0.18 },
+		{ x = 0.7, h = 0.23, y = 0.22 },
+	}
+	for i, f in fingers do
+		local finger =
+			rounded(hand, "Finger" .. i, GLOVE, UDim2.fromScale(0.13, f.h), UDim2.fromScale(f.x, f.y + f.h / 2), 0.5, z)
+		rounded(finger, "Tip", GRIP, UDim2.fromScale(0.8, 0.22), UDim2.fromScale(0.5, 0.16), 0.5, z + 1)
+	end
+	local thumb = rounded(hand, "Thumb", GLOVE, UDim2.fromScale(0.14, 0.3), UDim2.fromScale(0.14, 0.52), 0.5, z)
+	thumb.Rotation = -38
+	return hand
+end
+
 function VisorClient.start()
 	local me = Players.LocalPlayer
 	local lang = Strings.langFromLocale(me.LocaleId)
@@ -59,10 +141,12 @@ function VisorClient.start()
 	gui.DisplayOrder = -9
 	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+	-- The glove wipes the outside of the glass: over the dust, under the inside fog and the helmet.
 	local dustLayer = layer(gui, "Dust", Assets.VisorDust.id, 1)
-	local fogLayer = layer(gui, "Fog", Assets.VisorFog.id, 2)
-	local frameLayer = layer(gui, "Frame", Assets.VisorFrame.id, 3)
-	-- The wipe sweeps a clean band across the dust from left to right.
+	local glove = makeGlove(gui, 2)
+	local fogLayer = layer(gui, "Fog", Assets.VisorFog.id, 10)
+	local frameLayer = layer(gui, "Frame", Assets.VisorFrame.id, 11)
+	-- The dust is clean to the left of the glove: the gradient's edge follows the glove.
 	local wipeGradient = Instance.new("UIGradient")
 	wipeGradient.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, 1),
@@ -86,6 +170,7 @@ function VisorClient.start()
 	local dust = 0 -- 0..1
 	local breath = 0 -- seconds into the current breath
 	local wiping = false
+	local smearUntil = 0 -- os.clock() until the smear left by the glove fades out
 	local hinted = false
 
 	local function wipe(_: string, state: Enum.UserInputState)
@@ -93,19 +178,31 @@ function VisorClient.start()
 			return Enum.ContextActionResult.Pass
 		end
 		wiping = true
-		wipeGradient.Offset = Vector2.new(-1, 0)
-		local sweep = TweenService:Create(
-			wipeGradient,
-			TweenInfo.new(WIPE_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-			{ Offset = Vector2.new(1, 0) }
-		)
-		sweep.Completed:Connect(function()
-			dust = 0
-			hinted = false
+		task.spawn(function()
+			-- The glove comes in low on the left, rises over the middle of the glass and leaves
+			-- on the right, tilting as it goes. The dust is clean wherever it has passed.
+			glove.Visible = true
+			local t = 0
+			while t < WIPE_SECONDS and suited do
+				t += RunService.RenderStepped:Wait()
+				local e = TweenService:GetValue(
+					math.min(t / WIPE_SECONDS, 1),
+					Enum.EasingStyle.Sine,
+					Enum.EasingDirection.InOut
+				)
+				local x = -0.2 + 1.4 * e
+				glove.Position = UDim2.fromScale(x, 0.8 - 0.3 * math.sin(math.pi * e))
+				glove.Rotation = -30 + 60 * e
+				wipeGradient.Offset = Vector2.new(x - 0.5, 0)
+			end
+			glove.Visible = false
 			wipeGradient.Offset = Vector2.new(-1, 0)
+			-- A thin smear stays for a moment and fades (see RenderStepped below).
+			dust = math.min(dust, SMEAR_LEFT)
+			smearUntil = os.clock() + SMEAR_FADE
+			hinted = false
 			wiping = false
 		end)
-		sweep:Play()
 		return Enum.ContextActionResult.Sink
 	end
 
@@ -143,8 +240,10 @@ function VisorClient.start()
 		local fog = if phase < 0.18 then phase / 0.18 elseif phase < 0.75 then 1 - (phase - 0.18) / 0.57 else 0
 		fogLayer.ImageTransparency = 1 - fog * peak * visible
 
-		-- Dust: only outside, faster in a dust storm.
-		if suited and not wiping and me:GetAttribute("Indoors") == false then
+		-- Dust: only outside, faster in a dust storm. Right after a wipe the smear fades first.
+		if os.clock() < smearUntil then
+			dust = math.max(0, dust - dt * SMEAR_LEFT / SMEAR_FADE)
+		elseif suited and not wiping and me:GetAttribute("Indoors") == false then
 			local raw = weather:GetAttribute("Payload")
 			local storm = typeof(raw) == "string" and string.find(raw, '"id":"dust"', 1, true) ~= nil
 			dust = math.min(1, dust + dt / DUST_SECONDS * (if storm then DUST_STORM_FACTOR else 1))

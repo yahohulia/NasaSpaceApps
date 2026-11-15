@@ -87,6 +87,7 @@ return {
 	["sparky.chat.busy"] = "Wait a bit. We are still waiting for Earth's answer.",
 	["sparky.chat.unsure"] = "Earth is not sure about that. Try asking in another way.",
 	["sparky.chat.error"] = "No signal right now. Try again in a moment.",
+	["sparky.chat.nosignal"] = "No signal! The Sun is between Mars and Earth now, so radio can't get through. Ask me again later.",
 	["weather.label.archived"] = "ARCHIVED · {date}",
 	["weather.label.live"] = "LIVE · {date}",
 	["weather.value.Low"] = "low",

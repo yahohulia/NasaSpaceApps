@@ -183,6 +183,13 @@ function Sparky.start()
 	end
 	refreshPrompt()
 
+	-- Solar conjunction: EventDirector's "Conjunction" event sets MB_BaseState@CommsOffline
+	-- (the Sun is between Mars and Earth, no radio gets through).
+	local function commsOffline(): boolean
+		local state = ReplicatedStorage:FindFirstChild("MB_BaseState")
+		return state ~= nil and state:GetAttribute("CommsOffline") == true
+	end
+
 	-- Filters text for this player. Returns nil when the filter fails or hides words.
 	local function filter(player: Player, text: string): string?
 		local result: string? = nil
@@ -253,6 +260,10 @@ function Sparky.start()
 			say:FireClient(player, "sparky.chat.busy")
 			return
 		end
+		if commsOffline() then
+			say:FireClient(player, "sparky.chat.nosignal")
+			return
+		end
 		busy[player] = true
 		talkUntil = os.clock() + TALK_PAUSE
 		say:FireClient(player, "sparky.thinking", "thinking")
@@ -298,6 +309,10 @@ function Sparky.start()
 			source = delay.source,
 		})
 		task.delay(roundTrip, function()
+			-- A conjunction started while the answer was on its way: it gets through when it ends.
+			while commsOffline() and player.Parent do
+				task.wait(1)
+			end
 			busy[player] = nil
 			if player.Parent then
 				deliver(player, answer, fromAi)
