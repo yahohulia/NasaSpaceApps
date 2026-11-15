@@ -173,8 +173,22 @@ function MissionBoardClient.start()
 	local shownDebrief = 0 -- sol of the last debrief shown
 	local debriefToken = 0
 
+	-- Free the cursor while one of our cards is open, and give back what it was before, only when
+	-- our cards open or close (other windows - Sparky, crops, soldering - manage it themselves).
+	local cardsOpen = false
+	local cursorBefore = UserInputService.MouseIconEnabled
 	local function cursor()
-		UserInputService.MouseIconEnabled = debriefCard.Visible or failCard.Visible
+		local open = debriefCard.Visible or failCard.Visible
+		if open == cardsOpen then
+			return
+		end
+		cardsOpen = open
+		if open then
+			cursorBefore = UserInputService.MouseIconEnabled
+			UserInputService.MouseIconEnabled = true
+		else
+			UserInputService.MouseIconEnabled = cursorBefore
+		end
 	end
 
 	local function drawBoard()
@@ -249,6 +263,7 @@ function MissionBoardClient.start()
 		end
 		label(debriefCard, factText(d.fact, d.factEvent, lang), 15, FONT, TEXT, order)
 		local close = button(debriefCard, Strings.get("mission.debrief.close", lang), GOOD, order + 1)
+		close.Modal = true -- unlocks the first-person mouse so the button can be clicked
 		debriefCard.Visible = true
 		cursor()
 		debriefToken += 1
@@ -277,6 +292,8 @@ function MissionBoardClient.start()
 		label(failCard, Strings.get("mission.failed." .. reason, lang), 17, FONT, TEXT, 2)
 		local supplies = button(failCard, Strings.get("mission.failed.supplies", lang), GOOD, 3)
 		local restart = button(failCard, Strings.get("mission.failed.restart", lang), DIM, 4)
+		supplies.Modal = true -- unlocks the first-person mouse so the buttons can be clicked
+		restart.Modal = true
 		supplies.Activated:Connect(function()
 			(choice :: RemoteEvent):FireServer("supplies")
 		end)

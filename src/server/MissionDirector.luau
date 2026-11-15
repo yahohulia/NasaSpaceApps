@@ -162,9 +162,13 @@ function MissionDirector.start()
 
 	-- Signals from other scripts.
 	objectiveDone.Event:Connect(function(_player: Player?, id: string)
-		if typeof(id) == "string" then
-			mark(id)
+		if typeof(id) ~= "string" then
+			return
 		end
+		if id == "pump" and not pumpBroken then
+			return -- a random break fixed before the sol-2 break does not count
+		end
+		mark(id)
 	end)
 	resetMission.Event:Connect(function()
 		task.defer(reset) -- after MB_ResourceServer has set Sol back to the start
