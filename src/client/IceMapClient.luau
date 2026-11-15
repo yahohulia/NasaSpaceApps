@@ -219,7 +219,12 @@ function IceMapClient.start()
 		for _, dep in IceMapConfig.Deposits do
 			local site = byName[dep.site]
 			if site then
-				dot(site.Position, Color3.fromRGB(110, 190, 255), 16, t("icemap.deposit", { name = dep.label, chance = dep.chance }))
+				dot(
+					site.Position,
+					Color3.fromRGB(110, 190, 255),
+					16,
+					t("icemap.deposit", { name = dep.label, chance = dep.chance })
+				)
 			end
 		end
 	end
@@ -230,7 +235,8 @@ function IceMapClient.start()
 	legend.Position = UDim2.new(0.5, 0, 1, -40)
 	legend.Size = UDim2.new(1, -40, 0, 46)
 
-	local credit = label(window, t("icemap.credit", { credit = IceMapConfig.Credit, date = IceMapConfig.ArchivedDate }), 14)
+	local credit =
+		label(window, t("icemap.credit", { credit = IceMapConfig.Credit, date = IceMapConfig.ArchivedDate }), 14)
 	credit.TextColor3 = Color3.fromRGB(170, 176, 190)
 	credit.AnchorPoint = Vector2.new(0.5, 1)
 	credit.Position = UDim2.new(0.5, 0, 1, -12)

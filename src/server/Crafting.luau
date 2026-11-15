@@ -103,8 +103,13 @@ local function bindSample(sample: Instance)
 		return
 	end
 	local key = if sample:GetAttribute("Large") == true then "Large" else kind
-	local prompt =
-		makePrompt(part, "CraftPrompt", text("craft.prompt.pickup"), text("craft.object.sample"), CraftConfig.Hold.Pickup)
+	local prompt = makePrompt(
+		part,
+		"CraftPrompt",
+		text("craft.prompt.pickup"),
+		text("craft.object.sample"),
+		CraftConfig.Hold.Pickup
+	)
 	prompt.Triggered:Connect(function(player)
 		if sample:GetAttribute("Collected") == true then
 			return
@@ -198,8 +203,13 @@ local function bindSortStation(inst: Instance)
 	if not inst:IsA("BasePart") or inst:FindFirstChild("CraftPrompt") then
 		return
 	end
-	local prompt =
-		makePrompt(inst, "CraftPrompt", text("craft.prompt.sort"), text("craft.object.sortTable"), CraftConfig.Hold.Sort)
+	local prompt = makePrompt(
+		inst,
+		"CraftPrompt",
+		text("craft.prompt.sort"),
+		text("craft.object.sortTable"),
+		CraftConfig.Hold.Sort
+	)
 	prompt.Triggered:Connect(sortFor)
 end
 
@@ -313,8 +323,13 @@ local function bindSite(inst: Instance)
 		onCraft(site, player)
 	end)
 	craftPrompts[site] = craft
-	local pack =
-		makePrompt(site, "CraftPackPrompt", text("craft.prompt.pack"), text("craft.object.drill"), CraftConfig.Hold.Pack)
+	local pack = makePrompt(
+		site,
+		"CraftPackPrompt",
+		text("craft.prompt.pack"),
+		text("craft.object.drill"),
+		CraftConfig.Hold.Pack
+	)
 	pack.KeyboardKeyCode = Enum.KeyCode.F
 	pack.UIOffset = Vector2.new(0, 70)
 	pack.Triggered:Connect(function(player)

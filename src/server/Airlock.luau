@@ -38,10 +38,17 @@ local function onTouched(pad: BasePart, hit: BasePart)
 	end
 
 	lastUse[player] = now
-	-- Pads with LeadsOutside=true are closed to players the medic keeps inside (Radiation).
-	if pad:GetAttribute("LeadsOutside") == true and player:GetAttribute("OutsideBlocked") == true then
-		Notice.send(player, "radiation.blocked", "alert")
-		return
+	-- Pads with LeadsOutside=true need the space suit (Suit) and are closed to players
+	-- the medic keeps inside (Radiation).
+	if pad:GetAttribute("LeadsOutside") == true then
+		if player:GetAttribute("SuitOn") ~= true then
+			Notice.send(player, "suit.need", "warn")
+			return
+		end
+		if player:GetAttribute("OutsideBlocked") == true then
+			Notice.send(player, "radiation.blocked", "alert")
+			return
+		end
 	end
 	character:PivotTo(target.CFrame)
 end
