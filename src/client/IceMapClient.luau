@@ -162,13 +162,13 @@ function IceMapClient.start()
 
 	local zoneInfo = label(zone, t("icemap.zone.nasa"), 16)
 	zoneInfo.Position = UDim2.fromOffset(10, 8)
-	zoneInfo.Size = UDim2.new(0.25, 0, 0.5, 0)
+	zoneInfo.Size = UDim2.fromScale(0.25, 0.5)
 	zoneInfo.TextXAlignment = Enum.TextXAlignment.Left
 	zoneInfo.TextYAlignment = Enum.TextYAlignment.Top
 	local zoneNote = label(zone, t("icemap.deposit.note"), 15, Color3.fromRGB(190, 196, 210))
 	zoneNote.AnchorPoint = Vector2.new(1, 0)
 	zoneNote.Position = UDim2.new(1, -10, 0, 8)
-	zoneNote.Size = UDim2.new(0.22, 0, 0.5, 0)
+	zoneNote.Size = UDim2.fromScale(0.22, 0.5)
 	zoneNote.TextXAlignment = Enum.TextXAlignment.Right
 	zoneNote.TextYAlignment = Enum.TextYAlignment.Top
 

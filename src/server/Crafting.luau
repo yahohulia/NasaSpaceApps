@@ -11,6 +11,7 @@
 -- every MB_Drill part; we only switch it on where the drill stands, and off everywhere else.
 --
 -- Player attributes: BagSamples, CarryParts (numbers), CarryingDrill (boolean).
+-- Remotes: CraftNotify (toasts), CraftSort (the sorting mini game, see "Sorting table").
 -- Shared store, attributes on ReplicatedStorage.MB_BaseState: Iron, Rocks, Parts, DrillBuilt.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -22,11 +23,25 @@ local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local Crafting = {}
 
-type Bag = { [string]: number }
+-- One entry per picked sample, in pickup order. key = SampleKind (or "Large"), view = its copy
+-- in Player.SampleBag that the client shows.
+type BagItem = { key: string, view: Instance }
+type Bag = { BagItem }
+
+-- An open sorting mini game: the player puts samples one by one into a box.
+type SortSession = {
+	station: BasePart,
+	lockUntil: number, -- after a wrong box the player waits a little (costs time)
+	got: { [string]: number }, -- metals sorted in this session, for the summary
+	rocks: number,
+	parts: number,
+}
 
 local notify: RemoteEvent
+local sortRemote: RemoteEvent
 local store: Instance
 local bags: { [Player]: Bag } = {}
+local sessions: { [Player]: SortSession } = {}
 
 local drillFolder: Folder
 local drillModel: Model? = nil
@@ -78,7 +93,7 @@ local function bagFolder(player: Player): Folder
 	return folder
 end
 
-local function putInBagView(player: Player, sample: Instance)
+local function putInBagView(player: Player, sample: Instance): Instance
 	local copy = sample:Clone()
 	for _, d in copy:GetDescendants() do
 		if d:IsA("ProximityPrompt") or d:IsA("ParticleEmitter") or d:IsA("Attachment") or d:IsA("Light") then
@@ -86,6 +101,7 @@ local function putInBagView(player: Player, sample: Instance)
 		end
 	end
 	copy.Parent = bagFolder(player)
+	return copy
 end
 
 local function bindSample(sample: Instance)
@@ -115,15 +131,14 @@ local function bindSample(sample: Instance)
 			return
 		end
 		local bag = bags[player]
-		local n = num(player, "BagSamples")
+		local n = if bag then #bag else 0
 		if not bag or n >= CraftConfig.BagSize then
 			notify:FireClient(player, "craft.toast.bag_full")
 			return
 		end
-		bag[key] = (bag[key] or 0) + 1
-		player:SetAttribute("BagSamples", n + 1)
 		sample:SetAttribute("Collected", true)
-		putInBagView(player, sample)
+		table.insert(bag, { key = key, view = putInBagView(player, sample) })
+		player:SetAttribute("BagSamples", n + 1)
 		sample:Destroy()
 		notify:FireClient(player, "craft.toast.picked", { n = n + 1, max = CraftConfig.BagSize })
 	end)
@@ -173,44 +188,146 @@ local function bindSalvage()
 	end
 end
 
--- Sorting table -----------------------------------------------------------------------------
+-- Sorting table: a mini game ----------------------------------------------------------------
+-- Using the table puts carried spare parts into the store, then opens the mini game on the
+-- client: it shows the first sample in the bag, the player picks a box. Right box: its metals
+-- go to the store. Wrong box: a hint, a short wait, and the sample stays to try again.
+-- Server -> client (CraftSort): "show" {item, left, kind?} · "wrong" {kind, wait} · "close" {kind?}
+-- Client -> server: "box", boxId · "stop".
 
-local function sortFor(player: Player)
+local boxOf: { [string]: string } = {}
+for _, boxId in CraftConfig.SortBoxOrder do
+	for _, kind in CraftConfig.SortBoxes[boxId] do
+		boxOf[kind] = boxId
+	end
+end
+
+local function nearStation(player: Player, station: BasePart): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return root ~= nil
+		and root:IsA("BasePart")
+		and (root.Position - station.Position).Magnitude <= CraftConfig.SortCloseDistance
+end
+
+local function showNext(player: Player, rightKind: string?)
+	local first = (bags[player] or {})[1]
+	sortRemote:FireClient(player, "show", {
+		item = if first then first.view else nil,
+		left = #(bags[player] or {}),
+		kind = rightKind, -- the sample just sorted right, for the "Right!" line
+	})
+end
+
+-- Closes the mini game and shows what this visit to the table gave.
+local function endSession(player: Player, closeKind: string?)
+	local session = sessions[player]
+	if not session then
+		return
+	end
+	sessions[player] = nil
+	sortRemote:FireClient(player, "close", { kind = closeKind })
+	notify:FireClient(player, "craft.toast.sorted", {
+		iron = session.got.Iron or 0,
+		nickel = session.got.Nickel or 0,
+		manganese = session.got.Manganese or 0,
+		rocks = session.rocks,
+		parts = session.parts,
+	})
+end
+
+local function openSort(player: Player, station: BasePart)
 	local bag = bags[player] or {}
 	local parts = num(player, "CarryParts")
-	if num(player, "BagSamples") <= 0 and parts <= 0 then
+	if #bag == 0 and parts <= 0 then
 		notify:FireClient(player, "craft.toast.nothing")
 		return
 	end
-	local iron, rocks = 0, 0
-	for kind, count in bag do
-		iron += (CraftConfig.IronYield[kind] or 0) * count
-		if kind == "Rock" then
-			rocks += count
+	local session = sessions[player]
+	if not session then
+		local got: { [string]: number } = {}
+		for _, metal in CraftConfig.Metals do
+			got[metal] = 0
 		end
+		local fresh: SortSession = { station = station, lockUntil = 0, got = got, rocks = 0, parts = 0 }
+		sessions[player] = fresh
+		session = fresh
 	end
-	store:SetAttribute("Iron", num(store, "Iron") + iron)
-	store:SetAttribute("Rocks", num(store, "Rocks") + rocks)
-	store:SetAttribute("Parts", num(store, "Parts") + parts)
-	bags[player] = {}
-	bagFolder(player):ClearAllChildren()
-	player:SetAttribute("BagSamples", 0)
-	player:SetAttribute("CarryParts", 0)
-	notify:FireClient(player, "craft.toast.sorted", { iron = iron, rocks = rocks, parts = parts })
+	assert(session, "session")
+	session.station = station
+	-- spare parts are easy to tell apart: they go straight to the store
+	if parts > 0 then
+		store:SetAttribute("Parts", num(store, "Parts") + parts)
+		player:SetAttribute("CarryParts", 0)
+		session.parts += parts
+	end
+	if #bag == 0 then
+		endSession(player, nil)
+	else
+		showNext(player, nil)
+	end
+end
+
+local function onSortChoice(player: Player, action: unknown, boxId: unknown)
+	local session = sessions[player]
+	if not session then
+		return
+	end
+	if action == "stop" or not nearStation(player, session.station) then
+		endSession(player, nil)
+		return
+	end
+	if action ~= "box" or typeof(boxId) ~= "string" or CraftConfig.SortBoxes[boxId] == nil then
+		return
+	end
+	if os.clock() < session.lockUntil then
+		return
+	end
+	local bag = bags[player] or {}
+	local item = bag[1]
+	if not item then
+		endSession(player, nil)
+		return
+	end
+	if boxOf[item.key] ~= boxId then
+		session.lockUntil = os.clock() + CraftConfig.SortWrongWait
+		sortRemote:FireClient(player, "wrong", { kind = item.key, wait = CraftConfig.SortWrongWait })
+		return
+	end
+	-- right box: its metals go to the shared store at once
+	for metal, amount in CraftConfig.Yield[item.key] or {} do
+		store:SetAttribute(metal, num(store, metal) + amount)
+		session.got[metal] = (session.got[metal] or 0) + amount
+	end
+	if item.key == "Rock" then
+		store:SetAttribute("Rocks", num(store, "Rocks") + 1)
+		session.rocks += 1
+	end
+	table.remove(bag, 1)
+	item.view:Destroy()
+	player:SetAttribute("BagSamples", #bag)
+	if #bag == 0 then
+		endSession(player, item.key)
+	else
+		showNext(player, item.key)
+	end
 end
 
 local function bindSortStation(inst: Instance)
 	if not inst:IsA("BasePart") or inst:FindFirstChild("CraftPrompt") then
 		return
 	end
+	local station = inst
 	local prompt = makePrompt(
-		inst,
+		station,
 		"CraftPrompt",
 		text("craft.prompt.sort"),
 		text("craft.object.sortTable"),
 		CraftConfig.Hold.Sort
 	)
-	prompt.Triggered:Connect(sortFor)
+	prompt.Triggered:Connect(function(player)
+		openSort(player, station)
+	end)
 end
 
 -- Ice drill ---------------------------------------------------------------------------------
@@ -258,8 +375,11 @@ local function refresh()
 		if not built then
 			craft.Enabled = true
 			craft.ActionText = text("craft.prompt.build")
-			craft.ObjectText =
-				text("craft.object.buildCost", { iron = CraftConfig.Recipe.Iron, parts = CraftConfig.Recipe.Parts })
+			local cost: { [string]: number } = {}
+			for _, key in CraftConfig.RecipeOrder do
+				cost[string.lower(key)] = CraftConfig.Recipe[key] or 0
+			end
+			craft.ObjectText = text("craft.object.buildCost", cost)
 			craft.HoldDuration = CraftConfig.Hold.Build
 		elseif carrier then
 			craft.Enabled = true
@@ -275,18 +395,24 @@ end
 
 local function onCraft(site: BasePart, player: Player)
 	if store:GetAttribute("DrillBuilt") ~= true then
-		local iron, parts = num(store, "Iron"), num(store, "Parts")
-		if iron < CraftConfig.Recipe.Iron or parts < CraftConfig.Recipe.Parts then
-			notify:FireClient(player, "craft.toast.need", {
-				iron = iron,
-				needIron = CraftConfig.Recipe.Iron,
-				parts = parts,
-				needParts = CraftConfig.Recipe.Parts,
-			})
+		-- vars for the message: iron = what we have, needIron = what the recipe asks, etc.
+		local vars: { [string]: number } = {}
+		local enough = true
+		for _, key in CraftConfig.RecipeOrder do
+			local have, need = num(store, key), CraftConfig.Recipe[key] or 0
+			vars[string.lower(key)] = have
+			vars["need" .. key] = need
+			if have < need then
+				enough = false
+			end
+		end
+		if not enough then
+			notify:FireClient(player, "craft.toast.need", vars)
 			return
 		end
-		store:SetAttribute("Iron", iron - CraftConfig.Recipe.Iron)
-		store:SetAttribute("Parts", parts - CraftConfig.Recipe.Parts)
+		for _, key in CraftConfig.RecipeOrder do
+			store:SetAttribute(key, num(store, key) - (CraftConfig.Recipe[key] or 0))
+		end
 		store:SetAttribute("DrillBuilt", true)
 		placeDrill(site)
 		notify:FireAllClients("craft.toast.built")
@@ -373,7 +499,7 @@ function Crafting.start()
 		state.Parent = ReplicatedStorage
 	end
 	store = state :: Instance
-	for _, key in { "Iron", "Rocks", "Parts" } do
+	for _, key in { "Iron", "Nickel", "Manganese", "Rocks", "Parts" } do
 		if store:GetAttribute(key) == nil then
 			store:SetAttribute(key, 0)
 		end
@@ -395,6 +521,7 @@ function Crafting.start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		bags[player] = nil
+		sessions[player] = nil
 		if carrier == player then
 			-- the drill goes back to where it last stood
 			carrier = nil
@@ -402,6 +529,27 @@ function Crafting.start()
 				placeDrill(lastSite)
 			end
 			refresh()
+		end
+	end)
+
+	local sortExisting = ReplicatedStorage:FindFirstChild("CraftSort")
+	if sortExisting and sortExisting:IsA("RemoteEvent") then
+		sortRemote = sortExisting
+	else
+		sortRemote = Instance.new("RemoteEvent")
+		sortRemote.Name = "CraftSort"
+		sortRemote.Parent = ReplicatedStorage
+	end
+	sortRemote.OnServerEvent:Connect(onSortChoice)
+	-- the mini game closes when the player walks away from the table
+	task.spawn(function()
+		while true do
+			task.wait(0.5)
+			for player, session in sessions do
+				if not nearStation(player, session.station) then
+					endSession(player, nil)
+				end
+			end
 		end
 	end)
 

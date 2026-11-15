@@ -61,7 +61,14 @@ function CraftClient.start()
 	toast.Name = "Toast"
 	toast.AnchorPoint = Vector2.new(0.5, 1)
 	toast.Position = UDim2.new(0.5, 0, 1, -114)
-	toast.Size = UDim2.fromOffset(520, 34)
+	toast.Size = UDim2.fromOffset(560, 34)
+	toast.AutomaticSize = Enum.AutomaticSize.Y -- long messages wrap onto more lines
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 6)
+	pad.PaddingBottom = UDim.new(0, 6)
+	pad.PaddingLeft = UDim.new(0, 10)
+	pad.PaddingRight = UDim.new(0, 10)
+	pad.Parent = toast
 	toast.BackgroundColor3 = Color3.fromRGB(34, 40, 58)
 	toast.BackgroundTransparency = 1
 	toast.TextTransparency = 1
@@ -97,7 +104,8 @@ function CraftClient.start()
 		end
 	end)
 
-	local function showInSlot(vf: ViewportFrame, item: Instance)
+	-- Puts a 3D copy of item into the viewport and returns it.
+	local function fillViewport(vf: ViewportFrame, item: Instance): Model
 		local model = Instance.new("Model")
 		local copy = item:Clone()
 		copy.Parent = model
@@ -116,7 +124,11 @@ function CraftClient.start()
 		cam.Parent = vf
 		vf.CurrentCamera = cam
 		model.Parent = vf
-		table.insert(spinning, model)
+		return model
+	end
+
+	local function showInSlot(vf: ViewportFrame, item: Instance)
+		table.insert(spinning, fillViewport(vf, item))
 	end
 
 	local function partIcon(vf: ViewportFrame)
@@ -187,7 +199,12 @@ function CraftClient.start()
 		local parts = {
 			t("craft.hud.bag", { n = num(player, "BagSamples"), max = CraftConfig.BagSize }),
 			t("craft.hud.parts", { n = num(player, "CarryParts") }),
-			t("craft.hud.store", { iron = num(store, "Iron"), parts = num(store, "Parts") }),
+			t("craft.hud.store", {
+				iron = num(store, "Iron"),
+				nickel = num(store, "Nickel"),
+				manganese = num(store, "Manganese"),
+				parts = num(store, "Parts"),
+			}),
 		}
 		if player:GetAttribute("CarryingDrill") == true then
 			table.insert(parts, t("craft.hud.carry"))
@@ -199,7 +216,7 @@ function CraftClient.start()
 	for _, key in { "BagSamples", "CarryParts", "CarryingDrill" } do
 		player:GetAttributeChangedSignal(key):Connect(render)
 	end
-	for _, key in { "Iron", "Parts" } do
+	for _, key in { "Iron", "Nickel", "Manganese", "Parts" } do
 		store:GetAttributeChangedSignal(key):Connect(render)
 	end
 	render()
