@@ -198,6 +198,21 @@ local function rippleOn(room: Room, version: number)
 	end
 end
 
+-- How many rooms are lit, for the power drain (MB_BaseState@LitRooms, read by MB_ResourceServer).
+local function publishLitRooms()
+	local baseState = ReplicatedStorage:FindFirstChild("MB_BaseState")
+	if not baseState then
+		return
+	end
+	local lit = 0
+	for _, room in rooms do
+		if room.on and #room.lamps > 0 then
+			lit += 1
+		end
+	end
+	baseState:SetAttribute("LitRooms", lit)
+end
+
 local function setRoom(room: Room, on: boolean, instant: boolean?)
 	if #room.lamps == 0 or (room.on == on and not instant) then
 		return
@@ -205,6 +220,7 @@ local function setRoom(room: Room, on: boolean, instant: boolean?)
 	room.on = on
 	room.version += 1
 	room.zone:SetAttribute("LightsOn", on)
+	publishLitRooms()
 	if instant then
 		for _, lamp in room.lamps do
 			setLook(lamp, if on then LightsConfig.On else LightsConfig.Off, 0)
@@ -269,6 +285,11 @@ function BaseLights.start()
 	for _, room in rooms do
 		setRoom(room, true, true)
 	end
+	-- MB_BaseState may appear after us; publish once it exists.
+	task.spawn(function()
+		ReplicatedStorage:WaitForChild("MB_BaseState", 30)
+		publishLitRooms()
+	end)
 
 	local remote = ReplicatedStorage:FindFirstChild("BaseLightsToggle")
 	if not (remote and remote:IsA("RemoteEvent")) then

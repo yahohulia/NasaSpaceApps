@@ -50,6 +50,14 @@ local function toAll(key: string, kind: string)
 	end
 end
 
+-- Tells the mission director (MissionDirector) that a crew objective happened.
+local function objectiveDone(player: Player?, id: string)
+	local event = ServerStorage:FindFirstChild("MB_ObjectiveDone")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, id)
+	end
+end
+
 local function setup(pump: Pump)
 	local station = pump.station
 	station:SetAttribute("PumpBroken", false)
@@ -226,6 +234,8 @@ local function bind(station: Instance)
 	station:GetAttributeChangedSignal("PumpBroken"):Connect(function()
 		if station:GetAttribute("PumpBroken") == true then
 			toAll("pump.toast.broken", "alert")
+		else
+			objectiveDone(nil, "pump") -- the fixed board is back in
 		end
 	end)
 	station.ChildAdded:Connect(refresh)
@@ -233,6 +243,13 @@ local function bind(station: Instance)
 		station:GetAttributeChangedSignal(name):Connect(refresh)
 	end
 	refresh()
+end
+
+-- The mission director breaks the pump on sol 2 (its own random breaks stay as they are).
+function WaterPump.breakNow()
+	for _, pump in pumps do
+		pump.station:SetAttribute("PumpBroken", true)
+	end
 end
 
 function WaterPump.start()

@@ -13,7 +13,9 @@ local Config = require(ReplicatedStorage:WaitForChild("MB_Config"))
 local SolarEvents = require(ReplicatedStorage:WaitForChild("MB_SolarEvents"))
 local eventsModule = ReplicatedStorage:FindFirstChild("MB_Events")
 local EventsConfig = if eventsModule then (require(eventsModule) :: any).Config else nil
+local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
 local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
+local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 local P, B, S = Config.Player, Config.Base, Config.Storm
 local SOL = require(ReplicatedStorage.Shared.Config).SolSeconds
 local rng = Random.new()
@@ -113,6 +115,21 @@ eventCommand.Event:Connect(function(command: string, a: any, b: any)
 	elseif command == "o2Failure" then
 		o2Broken = a == true
 		baseState:SetAttribute("O2Broken", o2Broken)
+	elseif command == "emergencySupplies" then
+		-- MissionDirector, after "Mission stopped": Earth sends supplies, but it costs game hours.
+		local refill = MissionPlan.EMERGENCY_REFILL
+		baseAir = math.max(baseAir, refill)
+		baseState:SetAttribute("BaseAir", baseAir)
+		for _, player in Players:GetPlayers() do
+			for _, name in { "Water", "Food" } do
+				local value = player:GetAttribute(name)
+				if typeof(value) == "number" and value < refill then
+					player:SetAttribute(name, refill)
+				end
+			end
+		end
+		startedAt -= MissionPlan.EMERGENCY_HOURS * SOL / 24 -- the clock jumps forward
+		baseState:SetAttribute("MissionStartedAt", startedAt)
 	end
 end)
 
@@ -288,7 +305,9 @@ local function tick()
 	local efficiency = baseState:GetAttribute("PanelEfficiency")
 	local panels = if typeof(efficiency) == "number" then efficiency else 1
 	local solar = if day then B.SolarPower * panels * (if stormActive then S.SolarFactor else 1) else 0
-	power = clamp100(power + (solar - B.BaseLoadPower) * dt)
+	local litRooms = baseState:GetAttribute("LitRooms")
+	local lights = LightsConfig.PowerPerLitRoom * (if typeof(litRooms) == "number" then litRooms else 0)
+	power = clamp100(power + (solar - B.BaseLoadPower - lights) * dt)
 	if o2Broken then
 		if EventsConfig then
 			baseAir -= EventsConfig.BASEAIR_DRAIN * dt -- broken generator: the air runs out
