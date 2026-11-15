@@ -543,7 +543,10 @@ watch(player, { "Ice" }, function()
 	iceText.Text = `{ice}/{Config.Player.MaxIce}`
 end)
 watch(baseState, { "SamplesCollected", "SamplesTotal" }, function()
-	sampleText.Text = `{num(baseState, "SamplesCollected")}/{num(baseState, "SamplesTotal", 6)}`
+	local total = num(baseState, "SamplesTotal", 0)
+	-- the old science rocks (Workspace.MB_Samples) are gone: no row when there is nothing to collect
+	sampleRow.Visible = total > 0
+	sampleText.Text = `{num(baseState, "SamplesCollected")}/{total}`
 end)
 
 -- Messages.
