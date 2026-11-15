@@ -23,6 +23,7 @@ function EventDirector.start()
 	local Workspace = game:GetService("Workspace")
 
 	local Events = require(ReplicatedStorage.Shared.MB_Events) :: any
+	local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 	local Config = require(ReplicatedStorage:WaitForChild("MB_Config"))
 	local C = Events.Config
 	local baseState = ReplicatedStorage:WaitForChild("MB_BaseState")
@@ -298,11 +299,20 @@ function EventDirector.start()
 	end
 
 	-- Scheduler -----------------------------------------------------------------------------------------
+	-- Every mission the scheduled hours shift a little (MissionPlan.jitteredHour), so runs differ.
+	local rolls: { number } = {}
+	local function rollSchedule()
+		for i in Events.Schedule do
+			rolls[i] = rng:NextNumber()
+		end
+	end
+	rollSchedule()
+
 	local function checkSchedule()
 		local sol = baseState:GetAttribute("Sol") or 1
 		local clock = baseState:GetAttribute("ClockTime") or 0
 		for i, entry in Events.Schedule do
-			if not fired[i] and sol == entry.sol and clock >= entry.hour then
+			if not fired[i] and sol == entry.sol and clock >= MissionPlan.jitteredHour(entry.hour, rolls[i]) then
 				fired[i] = true
 				local ok = true
 				if entry.condition == "panelsDirty" then
@@ -355,6 +365,7 @@ function EventDirector.start()
 	resetMission.Event:Connect(function()
 		table.clear(fired)
 		table.clear(active)
+		rollSchedule()
 		baseState:SetAttribute("CommsOffline", false)
 		addLog("mission reset")
 		publish()
