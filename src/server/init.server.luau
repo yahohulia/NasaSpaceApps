@@ -19,7 +19,7 @@ Sparky.start()
 Suit.start()
 Weather.start()
 BaseLights.start()
-EventDirector.start()
+task.spawn(EventDirector.start) -- waits for the MB objects in the place
 Radiation.start()
 
 print("[junior-astronaut] server started")
