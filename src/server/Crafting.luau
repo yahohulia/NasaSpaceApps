@@ -18,6 +18,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
+local BagSpace = require(ReplicatedStorage.Shared.BagSpace)
 local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
@@ -123,6 +124,14 @@ local function putInBagView(player: Player, sample: Instance): Instance
 	return copy
 end
 
+-- Tells the mission director (MissionDirector) that a rock sample was picked up (any rock or meteorite).
+local function sampleCollected(player: Player)
+	local event = ServerStorage:FindFirstChild("MB_ObjectiveDone")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, "sample")
+	end
+end
+
 local function bindSample(sample: Instance)
 	local kind = sample:GetAttribute("SampleKind")
 	if typeof(kind) ~= "string" or sample:GetAttribute("Collected") == true then
@@ -151,10 +160,8 @@ local function bindSample(sample: Instance)
 		end
 		local bag = bags[player]
 		local n = if bag then #bag else 0
-		-- seed packets and harvest (Player.CropBag, Crops.luau) share the same bag places
-		local cropBag = player:FindFirstChild("CropBag")
-		local crops = if cropBag then #cropBag:GetChildren() else 0
-		if not bag or n + crops >= CraftConfig.BagSize then
+		-- seeds, harvest and ice share the same bag places (Shared.BagSpace)
+		if not bag or BagSpace.free(player) <= 0 then
 			notify:FireClient(player, "craft.toast.bag_full")
 			return
 		end
@@ -162,7 +169,8 @@ local function bindSample(sample: Instance)
 		table.insert(bag, { key = key, view = putInBagView(player, sample) })
 		player:SetAttribute("BagSamples", n + 1)
 		sample:Destroy()
-		notify:FireClient(player, "craft.toast.picked", { n = n + 1 + crops, max = CraftConfig.BagSize })
+		sampleCollected(player)
+		notify:FireClient(player, "craft.toast.picked", { n = BagSpace.used(player), max = CraftConfig.BagSize })
 		firstPickup(player)
 	end)
 end

@@ -53,27 +53,6 @@ local function num(inst: Instance, name: string): number
 	return if typeof(v) == "number" then v else 0
 end
 
--- Rock samples: Crafting's Workspace.Samples (children with a SampleKind attribute, Collected = true once
--- picked up). MB_Missions' own counter is the fallback when that folder is missing.
-local function samples(baseState: Instance): (number, number)
-	local folder = workspace:FindFirstChild("Samples")
-	if folder then
-		local got, total = 0, 0
-		for _, sample in folder:GetChildren() do
-			if typeof(sample:GetAttribute("SampleKind")) == "string" then
-				total += 1
-				if sample:GetAttribute("Collected") == true then
-					got += 1
-				end
-			end
-		end
-		if total > 0 then
-			return got, total
-		end
-	end
-	return num(baseState, "SamplesCollected"), num(baseState, "SamplesTotal")
-end
-
 -- Everything the sorting table has put in the base store so far (metals and plain rocks).
 local function sorted(baseState: Instance): number
 	return num(baseState, "Iron") + num(baseState, "Nickel") + num(baseState, "Manganese") + num(baseState, "Rocks")
@@ -106,6 +85,7 @@ function MissionDirector.start()
 	-- What was seen during the sol, for "fix it again" objectives.
 	local panelsWereDirty, radarWasBroken, o2WasBroken = false, false, false
 	local samplesAtStart = 0
+	local samplesPicked = 0 -- rock samples picked up this mission (Crafting fires MB_ObjectiveDone "sample")
 	local lastGoal = ""
 	local storeAtStart = 0 -- sorted metals + plain rocks in the base store at the start of the sol
 	local iceSeen: { [Player]: number } = {}
@@ -186,7 +166,7 @@ function MissionDirector.start()
 		table.clear(broken)
 		emergencies = 0
 		panelsWereDirty, radarWasBroken, o2WasBroken = false, false, false
-		samplesAtStart = samples(baseState)
+		samplesAtStart = samplesPicked
 		storeAtStart = sorted(baseState)
 		table.clear(iceSeen)
 		for _, player in Players:GetPlayers() do
@@ -204,6 +184,7 @@ function MissionDirector.start()
 		debrief = nil
 		failed = nil
 		pumpBroken = false
+		samplesPicked = 0
 		table.clear(stormWarned)
 		table.clear(soloWarned)
 		openSol(num(baseState, "Sol") > 0 and num(baseState, "Sol") or 1)
@@ -212,6 +193,10 @@ function MissionDirector.start()
 	-- Signals from other scripts.
 	objectiveDone.Event:Connect(function(_player: Player?, id: string)
 		if typeof(id) ~= "string" then
+			return
+		end
+		if id == "sample" then
+			samplesPicked += 1 -- counted below, every sample picked up (not an objective of its own)
 			return
 		end
 		if id == "pump" and not pumpBroken then
@@ -310,8 +295,7 @@ function MissionDirector.start()
 		if num(baseState, "Power") <= 0 and inSol("power") then
 			broken.power = true
 		end
-		local got, total = samples(baseState)
-		if got - samplesAtStart >= MissionPlan.SOL1_SAMPLES then
+		if samplesPicked - samplesAtStart >= MissionPlan.SOL1_SAMPLES then
 			mark("samples")
 		end
 		if sorted(baseState) > storeAtStart then
@@ -336,7 +320,7 @@ function MissionDirector.start()
 		elseif o2WasBroken then
 			mark("oxygen")
 		end
-		if total > 0 and got >= math.min(total, MissionPlan.MISSION_SAMPLES) then
+		if samplesPicked >= MissionPlan.MISSION_SAMPLES then
 			mark("allSamples")
 		end
 		if baseState:GetAttribute("Launched") == true then

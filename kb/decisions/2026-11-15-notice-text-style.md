@@ -1,11 +1,12 @@
 ---
-title: "Decision: one text style for notices"
+title: 'Decision: one text style for notices'
 type: decision
 status: current
 date: 2026-11-15
 tags:
 - ui
 - events
+permalink: sol-sandbox/decisions/2026-11-15-notice-text-style
 ---
 
 # Decision: one text style for notices

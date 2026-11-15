@@ -193,10 +193,16 @@ function MissionBoardClient.start()
 		end
 	end
 
+	-- The board steps aside while the sorting mini game is open (it would cover the left box).
+	local function sorting(): boolean
+		local g = me.PlayerGui:FindFirstChild("SortGame")
+		return g ~= nil and g:IsA("ScreenGui") and g.Enabled
+	end
+
 	local function drawBoard()
 		local p = payload
 		local s = p and MissionPlan.sols[p.sol]
-		board.Visible = s ~= nil
+		board.Visible = s ~= nil and not sorting()
 		if not (p and s) then
 			return
 		end
@@ -358,7 +364,7 @@ function MissionBoardClient.start()
 		while gui.Parent do
 			task.wait(1)
 			local p = payload
-			if p and p.briefAt - workspace:GetServerTimeNow() > -1.5 then
+			if (p and p.briefAt - workspace:GetServerTimeNow() > -1.5) or board.Visible == sorting() then
 				drawBoard()
 			end
 		end
