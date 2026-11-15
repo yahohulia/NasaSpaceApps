@@ -36,3 +36,4 @@ permalink: sol-sandbox/index
 - see_also [[Decision: Roblox asset conventions]]
 - see_also [[Decision: content and asset conventions]]
 - see_also [[Decision: git authorship]]
+- see_also [[Decision: HUD contract]]
