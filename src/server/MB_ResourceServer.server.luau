@@ -278,6 +278,114 @@ local function warnOnce(key: string, condition: boolean, send: () -> ())
 	end
 end
 
+-- Sleeping in a bed ("Rest" prompt) ----------------------------------------------------------------
+-- The player lies down on a free bed (Workspace.MB_SleepSpots, parts tagged MB_SleepSpot; their LookVector
+-- points to the pillow). A sleep always lasts SLEEP_SECONDS: fatigue drops from where it was to 0 in that time
+-- (the rate is worked out when the player lies down). At 0 the player wakes up by themself;
+-- Space / the "Wake up" button (RemoteEvent MB_Sleep "wake", MB_SleepClient) or the prompt again wakes them early.
+-- Player attributes for the client: Sleeping (bool), SleepRate (fatigue per second).
+local SLEEP_SECONDS = Config.Actions.Rest.SleepSeconds or 10 -- game value: one sleep takes this long
+local SLEEP_TAG = "MB_SleepSpot"
+local sleepers: { [Player]: BasePart } = {}
+local sleepEvent = ensure(ReplicatedStorage, "RemoteEvent", "MB_Sleep") :: RemoteEvent
+
+local function freeSpot(near: Vector3, preferred: BasePart?): BasePart?
+	local taken: { [BasePart]: boolean } = {}
+	for _, s in sleepers do
+		taken[s] = true
+	end
+	if preferred and CollectionService:HasTag(preferred, SLEEP_TAG) and not taken[preferred] then
+		return preferred
+	end
+	local best, bestDistance = nil, math.huge
+	for _, s in CollectionService:GetTagged(SLEEP_TAG) do
+		if s:IsA("BasePart") and not taken[s] then
+			local d = (s.Position - near).Magnitude
+			if d < bestDistance then
+				best, bestDistance = s, d
+			end
+		end
+	end
+	return best
+end
+
+local function wake(player: Player)
+	local spot = sleepers[player]
+	if not spot then
+		return
+	end
+	sleepers[player] = nil
+	player:SetAttribute("Sleeping", false)
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = rootOf(player)
+	if humanoid then
+		humanoid.PlatformStand = false
+	end
+	if root then
+		root.Anchored = false
+	end
+	if character then
+		-- Stand up beside the foot of the bed.
+		character:PivotTo(CFrame.new(spot.Position - spot.CFrame.LookVector * 6 + Vector3.new(0, 3, 0)))
+	end
+end
+
+local function sleep(player: Player, part: Instance?)
+	if sleepers[player] then
+		wake(player)
+		return
+	end
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = rootOf(player)
+	if not (character and humanoid and root) then
+		return
+	end
+	if (player:GetAttribute("Fatigue") or 0) < 1 then
+		notify:FireClient(player, "not_tired")
+		return
+	end
+	local spot = freeSpot(root.Position, if part and part:IsA("BasePart") then part else nil)
+	if not spot then
+		notify:FireClient(player, "beds_full")
+		return
+	end
+	sleepers[player] = spot
+	player:SetAttribute("SleepRate", (player:GetAttribute("Fatigue") or 0) / SLEEP_SECONDS) -- fully rested in SLEEP_SECONDS
+	player:SetAttribute("Sleeping", true)
+	humanoid.PlatformStand = true
+	root.Anchored = true
+	-- Lie on the back: head towards the pillow, face up.
+	local head = spot.CFrame.LookVector
+	local back = Vector3.new(0, -1, 0)
+	character:PivotTo(CFrame.fromMatrix(spot.Position + Vector3.new(0, 1, 0), head:Cross(back), head, back))
+end
+
+sleepEvent.OnServerEvent:Connect(function(player, action)
+	if action == "wake" then
+		wake(player)
+	end
+end)
+Players.PlayerRemoving:Connect(function(player)
+	sleepers[player] = nil
+end)
+local function watchCharacter(player: Player)
+	player.CharacterRemoving:Connect(function()
+		sleepers[player] = nil
+		player:SetAttribute("Sleeping", false)
+	end)
+end
+Players.PlayerAdded:Connect(watchCharacter)
+for _, player in Players:GetPlayers() do
+	watchCharacter(player)
+end
+resetEvent.Event:Connect(function()
+	for player in sleepers do
+		wake(player)
+	end
+end)
+
 -- Tick ------------------------------------------------------------------------------------------------
 local function tick()
 	local now = workspace:GetServerTimeNow()
@@ -339,9 +447,16 @@ local function tick()
 
 		local food = clamp100((player:GetAttribute("Food") or 0) - P.FoodDrain * dt)
 		local water = clamp100((player:GetAttribute("Water") or 0) - P.WaterDrain * dt)
+		local asleep = sleepers[player] ~= nil
 		local fatigue = clamp100(
 			(player:GetAttribute("Fatigue") or 0)
-				+ (if isInside then P.FatigueGainInside else P.FatigueGainOutside) * dt
+				+ (
+						if asleep
+							then -(player:GetAttribute("SleepRate") or 10)
+							elseif isInside then P.FatigueGainInside
+							else P.FatigueGainOutside
+					)
+					* dt
 		)
 		local suit = player:GetAttribute("SuitO2") or 0
 		if isInside and baseAir > 0 then
@@ -377,6 +492,10 @@ local function tick()
 		player:SetAttribute("Water", water)
 		player:SetAttribute("Fatigue", fatigue)
 		player:SetAttribute("SuitO2", suit)
+		if asleep and fatigue <= 0 then
+			wake(player) -- fully rested
+			notify:FireClient(player, "slept_well")
+		end
 
 		local slow = food <= 0 or water <= 0 or fatigue >= P.TiredAt
 		local speed = if slow then P.SlowWalkSpeed else P.NormalWalkSpeed
@@ -387,7 +506,7 @@ local function tick()
 end
 
 -- Interactions -------------------------------------------------------------------------------------
-local handlers: { [string]: (Player) -> () } = {
+local handlers: { [string]: (Player, BasePart) -> () } = {
 	DigIce = function(player)
 		local a = Config.Actions.DigIce
 		local ice = player:GetAttribute("Ice") or 0
@@ -419,9 +538,8 @@ local handlers: { [string]: (Player) -> () } = {
 		harvestReadyAt = now + a.Cooldown
 		player:SetAttribute("Food", clamp100((player:GetAttribute("Food") or 0) + a.Food))
 	end,
-	Rest = function(player)
-		local a = Config.Actions.Rest
-		player:SetAttribute("Fatigue", clamp100((player:GetAttribute("Fatigue") or 0) + a.Fatigue))
+	Rest = function(player, part)
+		sleep(player, part) -- lie down in a bed; fatigue drops while asleep (see "Sleeping in a bed")
 	end,
 }
 
@@ -446,7 +564,7 @@ local function bindAction(name: string, part: Instance)
 		if name == "Drink" and part:GetAttribute("PumpWorking") == false then
 			return -- the water pump is broken or switched off (WaterPump)
 		end
-		handlers[name](player)
+		handlers[name](player, part)
 	end)
 	prompt.Parent = part
 end

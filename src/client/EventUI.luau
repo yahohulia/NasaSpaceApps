@@ -1,7 +1,12 @@
 -- EventUI (client): shows the events from EventDirector (RemoteEvent MB_EventState).
 --   New event -> the full card for BANNER_TIME s -> it folds into a small square (icon + timer).
---   The square stays until the event is over. Tap the square (or press G) -> the full card again;
---   it stays open until the player taps X (or G). One square per running event.
+--   The squares sit in a column on the left side of the screen (the weather square from WeatherClient
+--   joins the same column) and stay until the event is over. Tap a square -> its full card.
+--   T (MB_Events.Config.TOGGLE_KEY) reads the cards one by one: weather first, then each event; after the
+--   last one T folds everything. Only one full card is on screen at a time, so they never overlap.
+--   WeatherClient follows T through the LocalPlayer attributes MB_EventsOpen / MB_EventsToggleId.
+--   The card fits between the HUD top and the messages below it (MB_HUD.Toast, the team's Toast near the
+--   bottom): when there is not enough room it shrinks (down to 60 %) instead of covering them.
 --   Event over -> "done" flash -> "Real event" card with the fact (FACT_TIME s).
 --   Marsquake shakes the camera. F1-F7 start events (Studio only, checked on the server).
 -- Sits under the MB_HUD centre column (and the weather card), never below 0.55 of the screen.
@@ -121,23 +126,47 @@ function EventUI.start()
 	)
 	local closeScale = new("UIScale", { Parent = closeButton })
 
-	-- Squares: one per running event (icon + timer). Tap = open the full card again. ----------------------
+	-- Squares: a column on the left side, one per running event (icon + timer). Tap = its full card. -------
+	-- WeatherClient puts its weather square into this same column (LayoutOrder 0, on top).
+	local SIDE_X, SIDE_TOP = 16, 0.16 -- px from the left edge; share of the screen height (upper half only)
+	-- One straight column, all squares the same size. If it would go below the upper half, every square shrinks
+	-- by the same amount (set every frame), but not below MIN_SQUARE_SCALE; on a very small screen the rest wraps
+	-- into a second column of the same size. Order: weather on top, then the events in the order they started.
+	local MIN_SQUARE_SCALE = 0.6 -- the smallest the squares get (56 px * 0.6), so the timer stays readable
 	local iconRow = new("Frame", {
 		Name = "Icons",
-		AnchorPoint = Vector2.new(0.5, 0),
-		AutomaticSize = Enum.AutomaticSize.XY,
+		AnchorPoint = Vector2.new(0, 0),
+		AutomaticSize = Enum.AutomaticSize.X,
 		Size = UDim2.new(),
 		BackgroundTransparency = 1,
-		Visible = false,
 		Parent = gui,
 	})
 	new("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
+		FillDirection = Enum.FillDirection.Vertical,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Padding = UDim.new(0, 8),
+		Wraps = true,
 		Parent = iconRow,
 	})
 	local iconScale = new("UIScale", { Parent = iconRow })
+	-- Key hint (T): a small badge beside the first square, outside the column so the rows of squares stay even
+	-- (computers only; on a phone the squares are tapped).
+	local zHint = new("TextLabel", {
+		Name = "ZHint",
+		AnchorPoint = Vector2.new(1, 0),
+		Size = UDim2.fromOffset(26, 22),
+		BackgroundColor3 = Color3.fromRGB(10, 10, 14),
+		BackgroundTransparency = 0.2,
+		FontFace = HEAVY,
+		TextSize = 14,
+		TextColor3 = TEXT,
+		Text = C.TOGGLE_KEY.Name,
+		Visible = false,
+		Parent = gui,
+	})
+	new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = zHint })
+	local zHintScale = new("UIScale", { Parent = zHint })
 
 	-- State ---------------------------------------------------------------------------------------------
 	type Entry = { id: string, phase: string, endsAt: number, fact: string? }
@@ -260,11 +289,55 @@ function EventUI.start()
 		end
 	end
 
+	-- Z: open the full text of everything (event card + weather card), or fold everything if anything is open.
+	local function weatherOpen(): boolean
+		local w = playerGui:FindFirstChild("WeatherCard")
+		local box = w and w:FindFirstChild("Box")
+		return w ~= nil and w:IsA("ScreenGui") and w.Enabled and box ~= nil and box:IsA("GuiObject") and box.Visible
+	end
+	-- WeatherClient listens to MB_EventsToggleId and opens / folds the weather card.
+	local function setWeatherOpen(open: boolean)
+		player:SetAttribute("MB_EventsOpen", open)
+		player:SetAttribute("MB_EventsToggleId", (player:GetAttribute("MB_EventsToggleId") or 0) + 1)
+	end
+	-- Z: show the next card (weather first, then the running events in order); after the last, fold all.
 	local function togglePanel()
-		if mode == "panel" or mode == "banner" then
+		local items: { string } = {}
+		local w = playerGui:FindFirstChild("WeatherCard")
+		if w and w:IsA("ScreenGui") and w.Enabled then
+			table.insert(items, "weather")
+		end
+		for _, e in events do
+			if e.phase == "warning" or e.phase == "active" then
+				table.insert(items, e.id)
+			end
+		end
+		local current = if weatherOpen()
+			then "weather"
+			elseif (mode == "panel" or mode == "banner") and focus then focus.id
+			else nil
+		local nextItem = items[1]
+		if current then
+			nextItem = nil
+			for i, item in items do
+				if item == current then
+					nextItem = items[i + 1]
+				end
+			end
+		end
+		if nextItem == "weather" then
 			setMode("none")
-		elseif #events > 0 then
-			openPanel(nil)
+			setWeatherOpen(true)
+		elseif nextItem then
+			if weatherOpen() then
+				setWeatherOpen(false)
+			end
+			openPanel(nextItem)
+		else
+			setMode("none")
+			if weatherOpen() then
+				setWeatherOpen(false)
+			end
 		end
 	end
 	closeButton.Activated:Connect(function()
@@ -272,6 +345,9 @@ function EventUI.start()
 	end)
 
 	local squares: { [string]: TextButton } = {}
+	-- Fixed order of the squares: the server's list order can change, the order an event started does not.
+	local orderOf: { [string]: number } = {}
+	local orderCounter = 0
 	local function square(id: string): TextButton
 		local b = squares[id]
 		if b then
@@ -316,7 +392,12 @@ function EventUI.start()
 			Parent = b,
 		})
 		b.Activated:Connect(function()
-			openPanel(id)
+			-- Tap the square of the open card = fold it; any other square = open that one.
+			if mode == "panel" and focus and focus.id == id then
+				setMode("none")
+			else
+				openPanel(id)
+			end
 		end)
 		squares[id] = b
 		return b
@@ -361,7 +442,8 @@ function EventUI.start()
 		if center and center:IsA("GuiObject") then
 			y = center.AbsolutePosition.Y + center.AbsoluteSize.Y
 		end
-		-- The weather card (WeatherClient): its full Box or, when folded, its Square. Go below what is shown.
+		-- The open weather card (WeatherClient) sits there too: event cards go below it.
+		-- (Its folded square lives in the side column, so it does not count here.)
 		local weather = playerGui:FindFirstChild("WeatherCard")
 		if weather and weather:IsA("ScreenGui") and weather.Enabled then
 			for _, g in weather:GetChildren() do
@@ -373,6 +455,7 @@ function EventUI.start()
 		return y + 8
 	end
 
+	local wasCardOpen, wasWeatherOpen = false, false
 	RunService.RenderStepped:Connect(function()
 		local camera = workspace.CurrentCamera
 		if not camera then
@@ -380,8 +463,6 @@ function EventUI.start()
 		end
 		local viewport = gui.AbsoluteSize -- the safe area, in the same space as MB_HUD
 		local s = math.clamp(camera.ViewportSize.Y / 480, 0.75, 1.4)
-		cardScale.Scale = s
-		iconScale.Scale = s
 		closeScale.Scale = s
 
 		if mode ~= "none" and os.clock() > modeUntil then
@@ -403,16 +484,109 @@ function EventUI.start()
 			setMode("none")
 		end
 
-		local y = math.max(topY(), viewport.Y * 0.27)
 		local hud = playerGui:FindFirstChild("MB_HUD")
-		if focus and (mode == "banner" or mode == "panel" or mode == "fact") then
-			iconRow.Visible = false
+		-- Side column: one square per event that is still running (warning or active), always shown.
+		local shown = 0
+		for _, b in squares do
+			b.Visible = false
+		end
+		local running: { [string]: boolean } = {}
+		for _, e in events do
+			if e.phase == "warning" or e.phase == "active" then
+				running[e.id] = true
+				if not orderOf[e.id] then
+					orderCounter += 1
+					orderOf[e.id] = orderCounter
+				end
+				local b = square(e.id)
+				b.Visible = true
+				b.LayoutOrder = orderOf[e.id] -- the weather square is 0, the key hint -1
+				local timer = b:FindFirstChild("Timer") :: TextLabel
+				timer.Text = if e.endsAt > 0 then mmss(e.endsAt - workspace:GetServerTimeNow()) else "tap"
+				shown += 1
+			end
+		end
+		local weatherSquare = iconRow:FindFirstChild("WeatherSquare")
+		local anySquare = shown > 0 or (weatherSquare ~= nil and (weatherSquare :: GuiObject).Visible)
+		for id in orderOf do
+			if not running[id] then
+				orderOf[id] = nil
+			end
+		end
+		zHint.Visible = anySquare and UserInputService.KeyboardEnabled
+		-- Same size for every square; shrink them all evenly when the column would reach below the upper half.
+		local need, count = 0, 0
+		for _, c in iconRow:GetChildren() do
+			if c:IsA("GuiObject") and c.Visible then
+				need += c.Size.Y.Offset
+				count += 1
+			end
+		end
+		need += math.max(count - 1, 0) * 8 -- UIListLayout padding
+		local room = viewport.Y * MAX_Y - (iconRow.AbsolutePosition.Y - gui.AbsolutePosition.Y)
+		local scale = math.clamp(room / math.max(need, 1), MIN_SQUARE_SCALE, s * 0.8)
+		iconScale.Scale = scale
+		iconRow.Size = UDim2.fromOffset(0, room / scale) -- taller than this wraps into a second column
+		-- The key badge sits just left of the column's top square.
+		zHintScale.Scale = scale
+		zHint.Position = UDim2.fromOffset(
+			iconRow.AbsolutePosition.X - gui.AbsolutePosition.X - 6,
+			iconRow.AbsolutePosition.Y - gui.AbsolutePosition.Y
+		)
+		-- Another script may own the column's place (MB_HudEventIcons moves it under the radar and sets its
+		-- AnchorPoint to (1, 0)); then leave Position alone, or the two scripts fight and the column jitters.
+		if iconRow.AnchorPoint == Vector2.zero then
+			iconRow.Position = UDim2.fromOffset(SIDE_X, viewport.Y * SIDE_TOP)
+		end
+
+		-- One full card at a time. The one the player opened last wins; an event card always beats a weather
+		-- card that popped up by itself (WeatherCard@Mode "full"); if both appear together, the event wins.
+		local cardOpen = focus ~= nil and (mode == "banner" or mode == "panel" or mode == "fact")
+		local wOpen = weatherOpen()
+		if cardOpen and wOpen then
+			local weatherCard = playerGui:FindFirstChild("WeatherCard")
+			local weatherAuto = weatherCard ~= nil and weatherCard:GetAttribute("Mode") == "full"
+			if not wasCardOpen or weatherAuto then
+				setWeatherOpen(false)
+				wOpen = false
+			elseif not wasWeatherOpen then
+				setMode("none")
+				cardOpen = false
+			end
+		end
+		wasCardOpen, wasWeatherOpen = cardOpen, wOpen
+
+		if cardOpen and focus then
 			card.Visible = true
 			-- Full card for a new event and when reopened; the short "done ✓" flash has no details.
 			fill(focus :: Entry, focus.phase ~= "done")
 			-- Never below 0.55 of the screen: move up if needed.
-			local h = card.AbsoluteSize.Y
-			card.Position = UDim2.fromOffset(viewport.X / 2, math.min(y, viewport.Y * MAX_Y - h))
+			-- Room for the card (gui space): from the HUD top down to the upper-half limit, above the team's
+			-- message near the bottom (NoticeClient "Toast") and leaving room for MB_HUD's own message.
+			local base = gui.AbsolutePosition.Y
+			local top = math.max(topY() - base, viewport.Y * 0.27)
+			local bottom = viewport.Y * MAX_Y
+			local notice = playerGui:FindFirstChild("Toast")
+			local noticeBox = notice and notice:FindFirstChild("Box")
+			if
+				notice
+				and notice:IsA("ScreenGui")
+				and notice.Enabled
+				and noticeBox
+				and noticeBox:IsA("GuiObject")
+				and noticeBox.Visible
+			then
+				bottom = math.min(bottom, noticeBox.AbsolutePosition.Y - base - 8)
+			end
+			local hudToast = hud and hud:FindFirstChild("Toast")
+			if hudToast and hudToast:IsA("GuiObject") and hudToast.Visible then
+				bottom -= hudToast.AbsoluteSize.Y + 8
+			end
+			-- Shrink the card (down to 60 % of normal) when it does not fit.
+			local natural = card.AbsoluteSize.Y / cardScale.Scale
+			cardScale.Scale = math.clamp((bottom - top) / math.max(natural, 1), 0.6, 1) * s
+			local h = natural * cardScale.Scale
+			card.Position = UDim2.fromOffset(viewport.X / 2, math.max(math.min(top, bottom - h), 0))
 			closeButton.Visible = true
 			closeButton.Position = UDim2.fromOffset(
 				card.AbsolutePosition.X + card.AbsoluteSize.X - gui.AbsolutePosition.X - 4,
@@ -424,29 +598,9 @@ function EventUI.start()
 		else
 			card.Visible = false
 			closeButton.Visible = false
-			-- One square per event that is still running (warning or active).
-			local shown = 0
-			for _, b in squares do
-				b.Visible = false
-			end
-			for i, e in events do
-				if e.phase == "warning" or e.phase == "active" then
-					local b = square(e.id)
-					b.Visible = true
-					b.LayoutOrder = i
-					local timer = b:FindFirstChild("Timer") :: TextLabel
-					timer.Text = if e.endsAt > 0 then mmss(e.endsAt - workspace:GetServerTimeNow()) else "tap"
-					shown += 1
-				end
-			end
-			iconRow.Visible = shown > 0
-			iconRow.Position = UDim2.fromOffset(viewport.X / 2, y)
 			if hud then
-				hud:SetAttribute(
-					"EventBottom",
-					-- No events: still keep messages below the folded weather square (topY includes it).
-					if shown > 0 then iconRow.AbsolutePosition.Y + iconRow.AbsoluteSize.Y + 8 else topY()
-				)
+				-- Messages go below the open weather card, if any (the squares are on the side now).
+				hud:SetAttribute("EventBottom", topY())
 			end
 		end
 	end)
