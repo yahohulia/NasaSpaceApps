@@ -27,11 +27,9 @@ function EventUI.start()
 	local player = Players.LocalPlayer
 	local playerGui = player:WaitForChild("PlayerGui")
 
-	local FONT = Font.fromEnum(Enum.Font.BuilderSans)
-	local BOLD = Font.new(FONT.Family, Enum.FontWeight.Bold)
-	local HEAVY = Font.new(FONT.Family, Enum.FontWeight.Heavy)
-	local TEXT = Color3.fromRGB(245, 240, 235)
-	local MUTED = Color3.fromRGB(200, 205, 215)
+	local Style = require(ReplicatedStorage.Shared.NoticeStyle)
+	local FONT, BOLD, HEAVY = Style.Font, Style.Bold, Style.Heavy
+	local TEXT = Style.TextColor -- every line of the card has this colour; only the border tells the kind
 	local MAX_Y = 0.55
 
 	local gui = Instance.new("ScreenGui")
@@ -97,12 +95,12 @@ function EventUI.start()
 	})
 	new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4), Parent = card })
 	new("UISizeConstraint", { MinSize = Vector2.new(260, 0), Parent = card })
-	local cTitle = label(card, 1, HEAVY, 20, TEXT)
-	local cShort = label(card, 2, BOLD, 15, TEXT, true)
-	local cBody = label(card, 3, FONT, 14, MUTED, true)
-	local cTodo = label(card, 4, FONT, 14, TEXT, true)
-	local cRole = label(card, 5, FONT, 13, MUTED, true)
-	local cTimer = label(card, 6, BOLD, 15, TEXT)
+	local cTitle = label(card, 1, HEAVY, Style.TitleSize, TEXT)
+	local cShort = label(card, 2, BOLD, Style.TextSize, TEXT, true)
+	local cBody = label(card, 3, FONT, Style.TextSize, TEXT, true)
+	local cTodo = label(card, 4, FONT, Style.TextSize, TEXT, true)
+	local cRole = label(card, 5, FONT, Style.TextSize, TEXT, true)
+	local cTimer = label(card, 6, BOLD, Style.TextSize, TEXT)
 	local cardScale = new("UIScale", { Parent = card })
 
 	-- ✕ button on the card's top-right corner (a separate button so the card's list layout ignores it).
@@ -159,7 +157,7 @@ function EventUI.start()
 		BackgroundColor3 = Color3.fromRGB(10, 10, 14),
 		BackgroundTransparency = 0.2,
 		FontFace = HEAVY,
-		TextSize = 14,
+		TextSize = Style.SmallSize,
 		TextColor3 = TEXT,
 		Text = C.TOGGLE_KEY.Name,
 		Visible = false,
@@ -386,7 +384,7 @@ function EventUI.start()
 			Size = UDim2.fromScale(1, 0.36),
 			BackgroundTransparency = 1,
 			FontFace = BOLD,
-			TextSize = 13,
+			TextSize = Style.SmallSize,
 			TextColor3 = TEXT,
 			Text = "",
 			Parent = b,
@@ -456,6 +454,7 @@ function EventUI.start()
 	end
 
 	local wasCardOpen, wasWeatherOpen = false, false
+	local foldedWeather = false -- this event card already folded the weather card once
 	RunService.RenderStepped:Connect(function()
 		local camera = workspace.CurrentCamera
 		if not camera then
@@ -541,18 +540,24 @@ function EventUI.start()
 
 		-- One full card at a time. The one the player opened last wins; an event card always beats a weather
 		-- card that popped up by itself (WeatherCard@Mode "full"); if both appear together, the event wins.
+		-- The event card folds the weather card at most once while it is open: if the weather card comes back,
+		-- the event card gives way instead, so the two never fold each other again and again (flicker).
 		local cardOpen = focus ~= nil and (mode == "banner" or mode == "panel" or mode == "fact")
 		local wOpen = weatherOpen()
 		if cardOpen and wOpen then
 			local weatherCard = playerGui:FindFirstChild("WeatherCard")
 			local weatherAuto = weatherCard ~= nil and weatherCard:GetAttribute("Mode") == "full"
-			if not wasCardOpen or weatherAuto then
+			if (not wasCardOpen or weatherAuto) and not foldedWeather then
 				setWeatherOpen(false)
 				wOpen = false
+				foldedWeather = true
 			elseif not wasWeatherOpen then
 				setMode("none")
 				cardOpen = false
 			end
+		end
+		if not cardOpen then
+			foldedWeather = false
 		end
 		wasCardOpen, wasWeatherOpen = cardOpen, wOpen
 
