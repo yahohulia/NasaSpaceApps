@@ -109,24 +109,61 @@ end
 
 -- Inside / outside: the player's HumanoidRootPart centre is inside any part tagged Config.InsideZoneTag
 -- (Workspace.MB_HabitatZone: boxes over the base floors + copies of the team's BaseZone volumes).
-local function isInsideZone(pos: Vector3): boolean
+local function zoneAt(pos: Vector3): BasePart?
 	for _, zone in CollectionService:GetTagged(Config.InsideZoneTag) do
 		if zone:IsA("BasePart") then
 			local p = zone.CFrame:PointToObjectSpace(pos)
 			local h = zone.Size / 2
 			if math.abs(p.X) <= h.X and math.abs(p.Y) <= h.Y and math.abs(p.Z) <= h.Z then
-				return true
+				return zone
 			end
 		end
 	end
-	return false
+	return nil
+end
+
+-- The zone boxes reach above the roof, so a player standing on the roof was "inside" and got
+-- free base air. Not inside if: the player stands (or jumps) on the roof (MB_RoofColliders), or
+-- nothing covers them and they are higher than a jump above the zone floor.
+local ROOF_FOLDER = "MB_RoofColliders"
+local MAX_UNCOVERED_HEIGHT = 7 -- game value: root height above the zone floor still counted as inside
+
+local function isUnderRoof(root: BasePart, zone: BasePart): boolean
+	local ignore: { Instance } = {}
+	for _, p in Players:GetPlayers() do
+		if p.Character then
+			table.insert(ignore, p.Character)
+		end
+	end
+	if zone.Parent then
+		table.insert(ignore, zone.Parent)
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = ignore
+	-- Standing or jumping on the roof?
+	local below = workspace:Raycast(root.Position, Vector3.new(0, -30, 0), params)
+	if below then
+		local roofs = workspace:FindFirstChild(ROOF_FOLDER)
+		if roofs and below.Instance:IsDescendantOf(roofs) then
+			return false
+		end
+	end
+	-- Anything above the head (roof, ceiling or the base mesh)?
+	if workspace:Raycast(root.Position, Vector3.new(0, 60, 0), params) then
+		return true
+	end
+	-- Open spots in the roof (doorways, gaps): inside only near the floor.
+	local floorY = zone.Position.Y - zone.Size.Y / 2
+	return root.Position.Y - floorY <= MAX_UNCOVERED_HEIGHT
 end
 
 local function playersInside(): { [Player]: boolean }
 	local inside = {}
 	for _, player in Players:GetPlayers() do
 		local root = rootOf(player)
-		if root and isInsideZone(root.Position) then
+		local zone = root and zoneAt(root.Position)
+		if root and zone and isUnderRoof(root, zone) then
 			inside[player] = true
 		end
 	end

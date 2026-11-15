@@ -44,10 +44,14 @@ local function lerp(a: number, b: number, t: number): number
 	return a + (b - a) * t
 end
 
--- Only the body itself is shown (arms, legs, torso). The head and every accessory
--- (hats, capes, shoulder pads...) stay hidden: up close they block the view.
+-- Only the body itself is shown (arms, legs, torso). The head, every accessory
+-- (hats, capes, shoulder pads...) and parts marked HideInFirstPerson (the suit
+-- helmet) stay hidden: up close they block the view.
 local function isShownPart(part: BasePart): boolean
-	return part.Name ~= "Head" and part.Name ~= "HumanoidRootPart" and part:FindFirstAncestorOfClass("Accessory") == nil
+	return part.Name ~= "Head"
+		and part.Name ~= "HumanoidRootPart"
+		and part:FindFirstAncestorOfClass("Accessory") == nil
+		and part:GetAttribute("HideInFirstPerson") ~= true
 end
 
 function FirstPersonClient.start()

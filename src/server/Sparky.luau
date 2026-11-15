@@ -3,6 +3,8 @@
 --   Workspace.Base.Habitat.Sparky      Model with a PrimaryPart (the rover)
 --   Workspace.Base.Habitat.SparkyPath  Folder of invisible parts named 1, 2, 3... (route)
 -- The client shows the line in the player's language (see client/SparkyClient.luau).
+-- Talking is a dialog: the prompt opens it, the client asks for more lines with
+-- SparkyTalk:FireServer("next") and ends it with "bye". Sparky waits while any dialog is open.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,12 +15,33 @@ local SPEED = 4 -- studs per second
 local TURN_SECONDS = 0.6
 local WAIT_AT_POINT = 2
 local TALK_PAUSE = 5
+local TALK_DISTANCE = 16 -- a dialog ends when the player walks further than this
 
 local Sparky = {}
 
 local talkUntil = 0
 local faceTarget: Vector3? = nil -- set when a player talks; only the drive loop moves the model
 local nextLine: { [Player]: number } = {}
+local talking: { [Player]: boolean } = {} -- players with the dialog open
+local activeRover: Model? = nil
+
+local function playerRoot(player: Player): BasePart?
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return if root and root:IsA("BasePart") then root else nil
+end
+
+-- True while someone near Sparky has the dialog open (drops players who walked away).
+local function anyoneTalking(): boolean
+	local model = activeRover
+	for player in talking do
+		local root = playerRoot(player)
+		if not (model and root and (root.Position - model:GetPivot().Position).Magnitude <= TALK_DISTANCE) then
+			talking[player] = nil
+		end
+	end
+	return next(talking) ~= nil
+end
 
 local function getRoute(folder: Instance): { Vector3 }
 	local points = {}
@@ -56,7 +79,7 @@ local function turnTo(model: Model, goal: CFrame)
 end
 
 local function waitWhileTalking(model: Model)
-	while os.clock() < talkUntil do
+	while os.clock() < talkUntil or anyoneTalking() do
 		local target = faceTarget
 		if target then
 			faceTarget = nil
@@ -94,6 +117,7 @@ function Sparky.start()
 		warn("[Sparky] Workspace.Base.Habitat.Sparky (with PrimaryPart) or SparkyPath not found")
 		return
 	end
+	activeRover = model
 	local rover: Model = model
 
 	local say = Instance.new("RemoteEvent")
@@ -107,20 +131,41 @@ function Sparky.start()
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = rover.PrimaryPart
 
-	prompt.Triggered:Connect(function(player)
+	local talk = Instance.new("RemoteEvent")
+	talk.Name = "SparkyTalk"
+	talk.Parent = ReplicatedStorage
+
+	local function sayNext(player: Player)
 		local index = nextLine[player] or 1
 		nextLine[player] = index % #SparkyLines + 1
 		talkUntil = os.clock() + TALK_PAUSE
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart")
-		if root and root:IsA("BasePart") then
+		say:FireClient(player, SparkyLines[index])
+	end
+
+	prompt.Triggered:Connect(function(player)
+		talking[player] = true
+		local root = playerRoot(player)
+		if root then
 			faceTarget = root.Position
 		end
-		say:FireClient(player, SparkyLines[index])
+		sayNext(player)
+	end)
+
+	talk.OnServerEvent:Connect(function(player, action: unknown)
+		if not talking[player] then
+			return
+		end
+		if action == "next" then
+			sayNext(player)
+		elseif action == "bye" then
+			talking[player] = nil
+			talkUntil = math.min(talkUntil, os.clock() + 1)
+		end
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
 		nextLine[player] = nil
+		talking[player] = nil
 	end)
 
 	local route = getRoute(pathFolder)
