@@ -203,10 +203,11 @@ local function playersInside(): { [Player]: boolean }
 	for _, player in Players:GetPlayers() do
 		local root = rootOf(player)
 		local zone = root and zoneAt(root.Position)
-		if root and zone and isUnderRoof(root, zone) then
-			inside[player] = true
-		elseif root and not zone and coveredByBase(root) then
-			inside[player] = true
+		if root then
+			local underRoof = if zone then isUnderRoof(root, zone) else coveredByBase(root)
+			if underRoof then
+				inside[player] = true
+			end
 		end
 	end
 	return inside
