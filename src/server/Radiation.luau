@@ -3,7 +3,9 @@
 -- during a radiation storm. Inside a building tagged "Shelter" it does not grow
 -- (a game simplification). At the mission limit the medic keeps the player inside:
 -- Player attribute "OutsideBlocked" = true (checked by Airlock).
--- "Inside" = the floor under the player belongs to a Shelter-tagged model.
+-- "Inside" = MB_ResourceServer's "IsInside" (its MB_InsideZone boxes) when present,
+-- else the solid floor under the player belongs to a Shelter-tagged model.
+-- The result is Player attribute "Indoors" (Suit uses it too).
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -66,6 +68,7 @@ end
 local function tick(dt: number)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.RespectCanCollide = true -- only real floors, not invisible pads or markers
 	local characters = {}
 	for _, player in Players:GetPlayers() do
 		if player.Character then
@@ -79,7 +82,10 @@ local function tick(dt: number)
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
 		if root and root:IsA("BasePart") then
-			local indoors = isIndoors(root, params)
+			-- MB_ResourceServer's zones (Player attribute "IsInside") know the base best;
+			-- the floor check is the fallback when that system is not running.
+			local mbInside = player:GetAttribute("IsInside")
+			local indoors = if type(mbInside) == "boolean" then mbInside else isIndoors(root, params)
 			player:SetAttribute("Indoors", indoors)
 			local dose = (player:GetAttribute("Dose") :: number?) or 0
 			if not indoors then

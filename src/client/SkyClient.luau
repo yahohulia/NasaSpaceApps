@@ -1,15 +1,16 @@
+--!strict
 -- Owns the look of the sky on this client. Blends three presets by the sun's height
 -- (DataMapping.sky: day / sunset / night) and puts the current weather event's look
 -- (DataMapping.looks) on top, fading it in and out.
 -- The place's Sky uses black skybox faces, so the Atmosphere paints the day sky and
 -- the night stays dark with stars (Sky.StarCount).
--- Base time = the server's Lighting.ClockTime (followed live).
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local DataMapping = require(ReplicatedStorage.Shared.DataMapping)
+local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
 
 local UPDATE_SECONDS = 0.1
 
@@ -53,17 +54,10 @@ function SkyClient.start()
 		atmosphere.Parent = Lighting
 	end
 	local state = ReplicatedStorage:WaitForChild("WeatherState")
-	local baseClock = Lighting.ClockTime
+	local baseState = ReplicatedStorage:WaitForChild("MB_BaseState")
+	local config = require(ReplicatedStorage:WaitForChild("MB_Config"))
+	local initialClock = Lighting.ClockTime
 	local isStudio = RunService:IsStudio()
-
-	-- Follow the server's time of day (e.g. MB_ResourceServer with Config.SyncLighting):
-	-- a ClockTime change we did not write ourselves came from the server.
-	local lastWritten = baseClock
-	Lighting:GetPropertyChangedSignal("ClockTime"):Connect(function()
-		if math.abs(Lighting.ClockTime - lastWritten) > 1e-3 then
-			baseClock = Lighting.ClockTime
-		end
-	end)
 
 	-- Current event look and its fade weight (0 = off, 1 = full).
 	local look: DataMapping.Look? = nil
@@ -93,8 +87,32 @@ function SkyClient.start()
 	state:GetAttributeChangedSignal("Payload"):Connect(onPayload)
 	onPayload()
 
-	local elapsed = 0
+	local elapsed = UPDATE_SECONDS
 	RunService.RenderStepped:Connect(function(dt)
+		local startedAt = baseState:GetAttribute("MissionStartedAt")
+		local solSeconds = baseState:GetAttribute("SolSeconds")
+		local clock = initialClock
+		if typeof(startedAt) == "number" and typeof(solSeconds) == "number" and solSeconds > 0 then
+			clock = MissionClock.sample(
+				workspace:GetServerTimeNow(),
+				startedAt,
+				solSeconds,
+				config.StartClockTime,
+				config.StartSol
+			)
+		else
+			local replicatedClock = baseState:GetAttribute("ClockTime")
+			if typeof(replicatedClock) == "number" then
+				clock = replicatedClock
+			end
+		end
+		-- Studio preview: set Lighting attribute DebugClockTime (0-24) to see any hour.
+		local debugClock = if isStudio then Lighting:GetAttribute("DebugClockTime") else nil
+		if typeof(debugClock) == "number" then
+			clock = debugClock % 24
+		end
+		Lighting.ClockTime = clock
+
 		elapsed += dt
 		if elapsed < UPDATE_SECONDS then
 			return
@@ -112,14 +130,6 @@ function SkyClient.start()
 			look = nil
 		end
 
-		local clock = baseClock
-		-- Studio preview: set Lighting attribute DebugClockTime (0-24) to see any hour.
-		local debugClock = if isStudio then Lighting:GetAttribute("DebugClockTime") else nil
-		if type(debugClock) == "number" then
-			clock = debugClock
-		elseif look and look.clockTime then
-			clock = lerp(baseClock, look.clockTime, weight)
-		end
 		local p = mixPresets(sunHeight(clock))
 
 		local density, haze, color, brightness = p.density, p.haze, p.color, p.brightness
@@ -130,11 +140,16 @@ function SkyClient.start()
 			brightness *= lerp(1, look.brightnessScale or 1, weight)
 		end
 
-		lastWritten = clock
-		Lighting.ClockTime = clock
 		Lighting.Brightness = brightness
-		Lighting.Ambient = p.ambient
-		Lighting.OutdoorAmbient = p.outdoorAmbient
+		-- BaseLightsClient darkens the ambients inside the base (local attributes, default 1).
+		local ambientScale = Lighting:GetAttribute("AmbientScale")
+		Lighting.Ambient = if type(ambientScale) == "number"
+			then p.ambient:Lerp(Color3.new(), 1 - ambientScale)
+			else p.ambient
+		local outdoorScale = Lighting:GetAttribute("OutdoorAmbientScale")
+		Lighting.OutdoorAmbient = if type(outdoorScale) == "number"
+			then p.outdoorAmbient:Lerp(Color3.new(), 1 - outdoorScale)
+			else p.outdoorAmbient
 		atmosphere.Density = density
 		atmosphere.Offset = p.offset
 		atmosphere.Color = color

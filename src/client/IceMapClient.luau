@@ -162,13 +162,13 @@ function IceMapClient.start()
 
 	local zoneInfo = label(zone, t("icemap.zone.nasa"), 16)
 	zoneInfo.Position = UDim2.fromOffset(10, 8)
-	zoneInfo.Size = UDim2.new(0.25, 0, 0.5, 0)
+	zoneInfo.Size = UDim2.fromScale(0.25, 0.5)
 	zoneInfo.TextXAlignment = Enum.TextXAlignment.Left
 	zoneInfo.TextYAlignment = Enum.TextYAlignment.Top
 	local zoneNote = label(zone, t("icemap.deposit.note"), 15, Color3.fromRGB(190, 196, 210))
 	zoneNote.AnchorPoint = Vector2.new(1, 0)
 	zoneNote.Position = UDim2.new(1, -10, 0, 8)
-	zoneNote.Size = UDim2.new(0.22, 0, 0.5, 0)
+	zoneNote.Size = UDim2.fromScale(0.22, 0.5)
 	zoneNote.TextXAlignment = Enum.TextXAlignment.Right
 	zoneNote.TextYAlignment = Enum.TextYAlignment.Top
 
@@ -219,7 +219,12 @@ function IceMapClient.start()
 		for _, dep in IceMapConfig.Deposits do
 			local site = byName[dep.site]
 			if site then
-				dot(site.Position, Color3.fromRGB(110, 190, 255), 16, t("icemap.deposit", { name = dep.label, chance = dep.chance }))
+				dot(
+					site.Position,
+					Color3.fromRGB(110, 190, 255),
+					16,
+					t("icemap.deposit", { name = dep.label, chance = dep.chance })
+				)
 			end
 		end
 	end
@@ -230,7 +235,8 @@ function IceMapClient.start()
 	legend.Position = UDim2.new(0.5, 0, 1, -40)
 	legend.Size = UDim2.new(1, -40, 0, 46)
 
-	local credit = label(window, t("icemap.credit", { credit = IceMapConfig.Credit, date = IceMapConfig.ArchivedDate }), 14)
+	local credit =
+		label(window, t("icemap.credit", { credit = IceMapConfig.Credit, date = IceMapConfig.ArchivedDate }), 14)
 	credit.TextColor3 = Color3.fromRGB(170, 176, 190)
 	credit.AnchorPoint = Vector2.new(0.5, 1)
 	credit.Position = UDim2.new(0.5, 0, 1, -12)
