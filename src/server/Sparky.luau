@@ -338,7 +338,15 @@ function Sparky.start()
 
 	talk.OnServerEvent:Connect(function(player, action: unknown, value: unknown)
 		if not talking[player] then
-			return
+			-- The dialog can also be opened by an event line (EventDirector -> SparkySay for everyone):
+			-- a player standing next to Sparky may ask from there too.
+			local root = playerRoot(player)
+			if
+				action == "bye" or not (root and (root.Position - rover:GetPivot().Position).Magnitude <= TALK_DISTANCE)
+			then
+				return
+			end
+			talking[player] = true
 		end
 		if action == "chat" and typeof(value) == "string" then
 			local text = string.sub((string.gsub(value, "^%s+", "")), 1, MAX_QUESTION_CHARS)
