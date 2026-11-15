@@ -140,6 +140,48 @@ const snapshots = {
 	},
 };
 
+// JPL Horizons: one-way light time Mars -> Earth, one row per day for a year ahead
+// (fallback for the live fetch in Horizons.luau). See kb/data/comm-delay.md.
+snapshots["horizons-mars-lt"] = async function () {
+	const url = horizonsUrl(daysAgo(7), daysAgo(-365), "1 d");
+	const data = await getJson(url);
+	const rows = parseHorizons(data.result);
+	return {
+		header: {
+			source: "NASA JPL Horizons",
+			url,
+			credit: "NASA JPL Solar System Dynamics",
+			notes: "Mars (499) seen from Earth's centre. distanceAu = delta (au); lightMinutes = 1-way_down_LT (minutes).",
+		},
+		rows,
+	};
+};
+
+function horizonsUrl(start, stop, step) {
+	const q = (v) => encodeURIComponent(`'${v}'`);
+	return (
+		"https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=" + q("499") +
+		"&OBJ_DATA=" + q("NO") + "&MAKE_EPHEM=" + q("YES") + "&EPHEM_TYPE=" + q("OBSERVER") +
+		"&CENTER=" + q("500@399") + "&START_TIME=" + q(start) + "&STOP_TIME=" + q(stop) +
+		"&STEP_SIZE=" + q(step) + "&QUANTITIES=" + q("20,21")
+	);
+}
+
+// Rows between $$SOE and $$EOE: "2026-Nov-15 00:00  1.3158  -14.75  10.94".
+function parseHorizons(text) {
+	const months = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
+	const body = text.split("$$SOE")[1].split("$$EOE")[0];
+	return body
+		.trim()
+		.split("\n")
+		.map((line) => {
+			const [date, , delta, , lt] = line.trim().split(/\s+/);
+			const [y, m, d] = date.split("-");
+			return { date: `${y}-${months[m]}-${d}`, distanceAu: Number(delta), lightMinutes: Number(lt) };
+		})
+		.filter((r) => Number.isFinite(r.lightMinutes));
+}
+
 function daysAgo(days) {
 	return new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
 }

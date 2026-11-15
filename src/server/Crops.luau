@@ -177,6 +177,14 @@ end
 
 -- Planting, harvest, eating ---------------------------------------------------------------------------
 
+-- Tells the mission director (MissionDirector) that a crew objective happened.
+local function objectiveDone(player: Player?, id: string)
+	local event = game:GetService("ServerStorage"):FindFirstChild("MB_ObjectiveDone")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, id)
+	end
+end
+
 -- Plants seed `id` (or, without `id`, the only kind of seed the player carries). With several kinds
 -- the client is asked which one, and plants through the remote.
 local function plant(rack: Rack, player: Player, id: string?)
@@ -236,6 +244,7 @@ local function plant(rack: Rack, player: Player, id: string?)
 	redraw(rack)
 	publish(rack)
 	notify:FireClient(player, "crop.toast.planted", { crop = crop.id, n = cost })
+	objectiveDone(player, "plant")
 	task.delay(3.8, function()
 		notify:FireClient(player, "crop.fact." .. crop.id)
 	end)
@@ -262,6 +271,7 @@ local function harvest(rack: Rack, player: Player)
 	redraw(rack)
 	publish(rack)
 	notify:FireClient(player, "crop.toast.harvested", { crop = crop.id, food = food })
+	objectiveDone(player, "harvest")
 end
 
 local function eat(player: Player)
