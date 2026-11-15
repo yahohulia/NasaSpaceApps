@@ -50,3 +50,9 @@ Space suit (locker, helmet, backpack) and helmet visor (dust, fog, frame). Commi
 - part_of [[Co-op campaign concept]]
 - follows [[Handoff: Roblox environment 2026-11-14 12:00]]
 - see_also [[Decision: Roblox asset conventions]]
+## Update 2026-11-15 13:30: events director, base fixed
+- [risk] Someone's agent edits the shared place **directly through Studio MCP** (no git, no Rojo): `Server.MB_ResourceServer` (event system, `o2Broken`), `Server/Client.PumpRepair` (pump soldering), `Shared.Config` (SolSeconds 360), `Shared.SolderConfig`, `Shared.SolderJoint`, `solder.*` keys in `Shared.i18n.en/uk`, Studio-only `MB_Missions`. None of it is in any git branch. Nobody on the team claimed it. A full Rojo re-sync (Connect from a clean checkout) would delete it. Backup copies (disabled): `ServerStorage.Backup_EventsWIP_1315`.
+- [decision] The base broke because `MB_ResourceServer`/`MB_Missions` waited for `ReplicatedStorage.MB_Events` and an `MB_EventDirector` that did not exist: no `MB_Notify` → no HUD, no missions, no storms, rocket never ready. Fix: `src/shared/MB_Events.luau` (Config + Schedule, game values), `src/server/EventDirector.luau` (plays the schedule through `ServerStorage.MB_EventCommand`; Studio keys F1–F6 via `src/client/EventDebugClient.luau`), Studio bridge `ReplicatedStorage.MB_Events` → `Shared.MB_Events`. Old Studio `StarterPlayerScripts.MB_HUD` disabled (git copy under `Client` runs).
+- Tested in Play: HUD back, dust storm on sol 1, solar storm, quake (radar + panel), launch window → "rocket is ready".
+- [question] `MB_Missions` now finds 0 science samples (tag `MB_Sample` is gone from the place; earlier 6). Check with the World / Mechanics owner.
+- [todo] The owner of the Studio-MCP agent must commit its files to git (from the backup or Studio) and stop editing Rojo-managed folders directly.
