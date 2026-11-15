@@ -7,7 +7,6 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local Notice = require(script.Parent.Notice)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 local WaterBottle = require(ReplicatedStorage.Shared.WaterBottle)
@@ -45,12 +44,7 @@ function WaterBottles.melt(player: Player)
 		Notice.send(player, "water.toast.no_ice", "warn")
 		return
 	end
-	local samples = player:GetAttribute("BagSamples")
-	local used = #bagOf(player):GetChildren() + (if typeof(samples) == "number" then samples else 0)
-	if used >= CraftConfig.BagSize then
-		Notice.send(player, "water.toast.bag_full", "warn")
-		return
-	end
+	-- The ice already takes a bag place (BagSpace); its bottle takes the same place, so no space check.
 	player:SetAttribute("Ice", ice - 1)
 	local item = Instance.new("StringValue")
 	item.Name = WaterBottle.KIND

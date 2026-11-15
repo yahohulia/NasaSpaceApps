@@ -550,7 +550,7 @@ watch(player, { "Fatigue" }, function()
 end)
 watch(player, { "Ice" }, function()
 	local ice = num(player, "Ice")
-	iceRow.Visible = ice > 0
+	iceRow.Visible = false -- ice now shows in the inventory bar (CraftClient), not as a row here
 	iceText.Text = `{ice}/{Config.Player.MaxIce}`
 end)
 watch(baseState, { "SamplesCollected", "SamplesTotal" }, function()

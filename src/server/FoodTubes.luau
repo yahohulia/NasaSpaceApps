@@ -6,7 +6,7 @@
 local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 
-local CraftConfig = require(game:GetService("ReplicatedStorage").Shared.CraftConfig)
+local BagSpace = require(game:GetService("ReplicatedStorage").Shared.BagSpace)
 local Notice = require(script.Parent.Notice)
 local Strings = require(game:GetService("ReplicatedStorage").Shared.Strings)
 
@@ -35,9 +35,7 @@ local function take(player: Player)
 		Notice.send(player, "food.tube.none_left", "warn", { max = PER_PLAYER })
 		return
 	end
-	local samples = player:GetAttribute("BagSamples")
-	local used = #bagOf(player):GetChildren() + (if typeof(samples) == "number" then samples else 0)
-	if used >= CraftConfig.BagSize then
+	if BagSpace.free(player) <= 0 then -- samples, crop items, ice and bottles share the bag
 		Notice.send(player, "food.tube.bag_full", "warn")
 		return
 	end

@@ -15,6 +15,7 @@ local eventsModule = ReplicatedStorage:FindFirstChild("MB_Events")
 local EventsConfig = if eventsModule then (require(eventsModule) :: any).Config else nil
 local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
 local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
+local BagSpace = require(ReplicatedStorage.Shared.BagSpace)
 local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 local P, B, S = Config.Player, Config.Base, Config.Storm
 local SOL = require(ReplicatedStorage.Shared.Config).SolSeconds
@@ -510,11 +511,13 @@ local handlers: { [string]: (Player, BasePart) -> () } = {
 	DigIce = function(player)
 		local a = Config.Actions.DigIce
 		local ice = player:GetAttribute("Ice") or 0
-		if ice >= P.MaxIce then
+		-- ice is carried in the shared 10-place bag with samples and crops (Shared.BagSpace)
+		local free = BagSpace.free(player)
+		if ice >= P.MaxIce or free <= 0 then
 			notify:FireClient(player, "ice_full")
 			return
 		end
-		player:SetAttribute("Ice", ice + a.Ice)
+		player:SetAttribute("Ice", ice + math.min(a.Ice, free))
 		player:SetAttribute("Fatigue", clamp100((player:GetAttribute("Fatigue") or 0) + a.Fatigue))
 		notify:FireClient(player, "ice_got")
 	end,
