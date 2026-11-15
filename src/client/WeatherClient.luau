@@ -1,9 +1,13 @@
 -- Shows the current weather event: a card at the top of the screen (what happened,
 -- the real fact, source + ARCHIVED/LIVE label). The event's look on the sky is SkyClient's job.
 -- Reads ReplicatedStorage.WeatherState@Payload (JSON, "" = calm), set by the server.
+-- A new weather event shows the full card for SHOW_SECONDS, then it folds into a small square
+-- (same place, icon of the event) that stays while the weather lasts. Tap the square -> the full card
+-- again; it stays open until the player taps X. Calm weather hides both.
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
@@ -11,10 +15,22 @@ local PANEL = Color3.fromRGB(27, 35, 48)
 local BORDER = Color3.fromRGB(232, 150, 60)
 local TEXT = Color3.fromRGB(225, 232, 238)
 local DIM = Color3.fromRGB(150, 162, 176)
+local SHOW_SECONDS = 5 -- the full card, then the square
+local ICONS = { dust = "🌪", cold = "❄", radiation = "☢", flare = "☀", cme = "🌞" }
 
 local WeatherClient = {}
 
-type Card = { gui: ScreenGui, title: TextLabel, body: TextLabel, fact: TextLabel, footer: TextLabel }
+type Card = {
+	gui: ScreenGui,
+	box: Frame,
+	square: TextButton,
+	icon: TextLabel,
+	close: TextButton,
+	title: TextLabel,
+	body: TextLabel,
+	fact: TextLabel,
+	footer: TextLabel,
+}
 
 local function label(
 	parent: Instance,
@@ -79,8 +95,72 @@ local function makeCard(playerGui: PlayerGui): Card
 	list.Padding = UDim.new(0, 4)
 	list.Parent = box
 
+	-- The folded card: a square with the event icon (tap = open the full card again).
+	local square = Instance.new("TextButton")
+	square.Name = "Square"
+	square.AnchorPoint = Vector2.new(0.5, 0)
+	square.Size = UDim2.fromOffset(56, 56)
+	square.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+	square.BackgroundTransparency = 0.2
+	square.Text = ""
+	square.Visible = false
+	square.Parent = gui
+	local squareCorner = Instance.new("UICorner")
+	squareCorner.CornerRadius = UDim.new(0, 10)
+	squareCorner.Parent = square
+	local squareStroke = Instance.new("UIStroke")
+	squareStroke.Color = BORDER
+	squareStroke.Thickness = 3
+	squareStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	squareStroke.Parent = square
+	local icon = Instance.new("TextLabel")
+	icon.Name = "Icon"
+	icon.Size = UDim2.fromScale(1, 0.62)
+	icon.BackgroundTransparency = 1
+	icon.Font = Enum.Font.GothamBold
+	icon.TextSize = 26
+	icon.TextColor3 = TEXT
+	icon.Text = "🌦"
+	icon.Parent = square
+	local tap = Instance.new("TextLabel")
+	tap.Name = "Tap"
+	tap.Position = UDim2.fromScale(0, 0.58)
+	tap.Size = UDim2.fromScale(1, 0.36)
+	tap.BackgroundTransparency = 1
+	tap.Font = Enum.Font.GothamBold
+	tap.TextSize = 12
+	tap.TextColor3 = TEXT
+	tap.Text = "tap"
+	tap.Parent = square
+
+	-- X on the top-right corner of the open card (outside the list layout, placed every frame).
+	local close = Instance.new("TextButton")
+	close.Name = "Close"
+	close.AnchorPoint = Vector2.new(0.5, 0.5)
+	close.Size = UDim2.fromOffset(30, 30)
+	close.BackgroundColor3 = Color3.fromRGB(55, 55, 66)
+	close.Font = Enum.Font.GothamBold
+	close.TextSize = 16
+	close.TextColor3 = TEXT
+	close.Text = "X"
+	close.ZIndex = 3
+	close.Visible = false
+	close.Parent = gui
+	local closeCorner = Instance.new("UICorner")
+	closeCorner.CornerRadius = UDim.new(1, 0)
+	closeCorner.Parent = close
+	local closeStroke = Instance.new("UIStroke")
+	closeStroke.Color = TEXT
+	closeStroke.Thickness = 2
+	closeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	closeStroke.Parent = close
+
 	local card = {
 		gui = gui,
+		box = box,
+		square = square,
+		icon = icon,
+		close = close,
 		title = label(box, "Title", 1, 22, BORDER, true),
 		body = label(box, "Body", 2, 18, TEXT, false),
 		fact = label(box, "Fact", 3, 16, TEXT, false),
@@ -96,10 +176,48 @@ function WeatherClient.start()
 	local state = ReplicatedStorage:WaitForChild("WeatherState")
 	local card = makeCard(player:WaitForChild("PlayerGui") :: PlayerGui)
 
+	-- "hidden" (calm) | "full" (new event, folds after SHOW_SECONDS) | "open" (until X) | "square"
+	local mode = "hidden"
+	local foldAt = 0
+	local shown = "" -- the payload on screen; a new one shows the full card again
+
+	local function apply()
+		local open = mode == "full" or mode == "open"
+		card.gui.Enabled = mode ~= "hidden"
+		card.box.Visible = open
+		card.close.Visible = open
+		card.square.Visible = mode == "square"
+	end
+
+	card.square.Activated:Connect(function()
+		mode = "open"
+		apply()
+	end)
+	card.close.Activated:Connect(function()
+		mode = "square"
+		apply()
+	end)
+
+	RunService.RenderStepped:Connect(function()
+		if mode == "full" and os.clock() >= foldAt then
+			mode = "square"
+			apply()
+		end
+		if mode == "square" then
+			-- Same spot as the card (MB_HUD moves the Box under its top bar).
+			card.square.Position = card.box.Position
+		elseif card.close.Visible then
+			local base = card.gui.AbsolutePosition
+			local p, s = card.box.AbsolutePosition, card.box.AbsoluteSize
+			card.close.Position = UDim2.fromOffset(p.X + s.X - base.X - 4, p.Y - base.Y + 4)
+		end
+	end)
+
 	local function render()
 		local raw = state:GetAttribute("Payload")
 		if typeof(raw) ~= "string" or raw == "" then
-			card.gui.Enabled = false
+			mode, shown = "hidden", ""
+			apply()
 			return
 		end
 		local ok, payload = pcall(HttpService.JSONDecode, HttpService, raw)
@@ -127,7 +245,13 @@ function WeatherClient.start()
 		card.fact.Text = Strings.get(`{prefix}.fact`, lang, vars)
 		card.footer.Text =
 			`{payload.source} · {payload.credit} · {Strings.get(labelKey, lang, { date = payload.date })}`
-		card.gui.Enabled = true
+		card.icon.Text = ICONS[payload.id] or "🌦"
+		if raw ~= shown then
+			shown = raw
+			mode = "full"
+			foldAt = os.clock() + SHOW_SECONDS
+		end
+		apply()
 	end
 
 	state:GetAttributeChangedSignal("Payload"):Connect(render)

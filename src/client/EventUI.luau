@@ -361,17 +361,14 @@ function EventUI.start()
 		if center and center:IsA("GuiObject") then
 			y = center.AbsolutePosition.Y + center.AbsoluteSize.Y
 		end
+		-- The weather card (WeatherClient): its full Box or, when folded, its Square. Go below what is shown.
 		local weather = playerGui:FindFirstChild("WeatherCard")
-		local box = weather and weather:FindFirstChild("Box")
-		if
-			weather
-			and weather:IsA("ScreenGui")
-			and weather.Enabled
-			and box
-			and box:IsA("GuiObject")
-			and box.Visible
-		then
-			y = math.max(y, box.AbsolutePosition.Y + box.AbsoluteSize.Y)
+		if weather and weather:IsA("ScreenGui") and weather.Enabled then
+			for _, g in weather:GetChildren() do
+				if g:IsA("GuiObject") and g.Visible and (g.Name == "Box" or g.Name == "Square") then
+					y = math.max(y, g.AbsolutePosition.Y + g.AbsoluteSize.Y)
+				end
+			end
 		end
 		return y + 8
 	end
@@ -447,7 +444,8 @@ function EventUI.start()
 			if hud then
 				hud:SetAttribute(
 					"EventBottom",
-					if shown > 0 then iconRow.AbsolutePosition.Y + iconRow.AbsoluteSize.Y + 8 else 0
+					-- No events: still keep messages below the folded weather square (topY includes it).
+					if shown > 0 then iconRow.AbsolutePosition.Y + iconRow.AbsoluteSize.Y + 8 else topY()
 				)
 			end
 		end
