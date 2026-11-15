@@ -3,19 +3,25 @@
 --   Workspace.Base.Habitat.Sparky      Model with a PrimaryPart (the rover)
 --   Workspace.Base.Habitat.SparkyPath  Folder of invisible parts named 1, 2, 3... (route)
 -- The client shows the line in the player's language (see client/SparkyClient.luau).
--- Talking is a dialog: the prompt opens it with a greeting, the player picks a question
--- (SparkyTalk:FireServer("ask", id), see shared/SparkyQuestions) and ends it with "bye".
--- Sparky waits while any dialog is open.
--- Answers: English players get the checked answer reworded by Roblox's TextGenerator (AI);
--- the AI may use only that answer as its fact. Ukrainian players, and any AI failure,
--- timeout or suspicious reply, get the checked i18n answer itself.
--- SparkySay:FireClient(player, keyOrText, kind?) where kind is nil, "thinking" or "ai".
+-- Talking is a dialog. Sparky is the crew's radio link to Earth:
+--   SparkyTalk:FireServer("chat", text)  a question the player typed
+--   SparkyTalk:FireServer("ask", id)     a quick question button (shared/SparkyQuestions)
+--   SparkyTalk:FireServer("bye")
+-- The question is filtered (TextService), then the AI (Roblox TextGenerator, context in
+-- SparkyContext) answers as Mission Control, or says OFFTOPIC and Sparky turns it down at once.
+-- A good question "flies" to Earth and back: the answer shows after 2 x Config.CommDelayMinutes
+-- of game time. If the player is gone by then, Sparky keeps it until they talk again.
+-- SparkySay:FireClient(player, keyOrText, kind?, extra?) where kind is
+--   nil (plain line), "thinking", "sending" (extra = real seconds until the answer)
+--   or "earth" (Earth's answer; extra = true when the AI wrote it).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 local TextService = game:GetService("TextService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
+local SparkyContext = require(script.Parent.SparkyContext)
 local SparkyQuestions = require(ReplicatedStorage.Shared.SparkyQuestions)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
@@ -24,23 +30,18 @@ local TURN_SECONDS = 0.6
 local WAIT_AT_POINT = 2
 local TALK_PAUSE = 5
 local TALK_DISTANCE = 16 -- a dialog ends when the player walks further than this
-local AI_TIMEOUT = 6 -- seconds; after that the checked answer is shown instead
-local AI_MAX_CHARS = 220 -- longer replies are treated as off-topic
-
-local SYSTEM_PROMPT = table.concat({
-	"You are Sparky, a cheerful little rover on a Mars base.",
-	"You talk to kids aged 7 to 12.",
-	"Answer the question in one or two short sentences with simple words.",
-	"Use ONLY the fact you are given. Do not add other facts, numbers, dates or names.",
-	"Never say anything scary. Do not ask questions back.",
-}, " ")
+local AI_TIMEOUT = 8 -- seconds to wait for the AI before "no signal"
+local AI_MAX_CHARS = 320 -- longer replies are treated as off-topic
+local MAX_QUESTION_CHARS = 120
+-- Round trip in real seconds: game minutes -> real seconds (a sol is 24 game hours).
+local ROUND_TRIP_SECONDS = 2 * Config.CommDelayMinutes * 60 * Config.SolSeconds / (24 * 60 * 60)
 
 local Sparky = {}
 
 local talkUntil = 0
 local faceTarget: Vector3? = nil -- set when a player talks; only the drive loop moves the model
-local asking: { [Player]: number } = {} -- id of the player's current question (drops stale replies)
-local busy: { [Player]: boolean } = {} -- an AI reply is on its way (one at a time per player)
+local busy: { [Player]: boolean } = {} -- a question is on its way (one at a time per player)
+local mailbox: { [Player]: { text: string, fromAi: boolean } } = {} -- Earth's answer that came while the player was away
 local talking: { [Player]: boolean } = {} -- players with the dialog open
 local activeRover: Model? = nil
 
@@ -156,21 +157,41 @@ function Sparky.start()
 
 	local generator = Instance.new("TextGenerator")
 	generator.Name = "SparkyBrain"
-	generator.SystemPrompt = SYSTEM_PROMPT
-	generator.Temperature = 0.7
+	generator.SystemPrompt = SparkyContext.systemPrompt
+	generator.Temperature = 0.5
 	generator.Parent = ServerStorage
 
-	-- Rewords the checked fact with the AI. Returns nil when the reply cannot be trusted.
-	local function aiAnswer(player: Player, question: string, fact: string): string?
+	-- Filters text for this player. Returns nil when the filter fails or hides words.
+	local function filter(player: Player, text: string): string?
+		local result: string? = nil
+		pcall(function()
+			local f = TextService:FilterStringAsync(text, player.UserId, Enum.TextFilterContext.PublicChat)
+			result = f:GetNonChatStringForUserAsync(player.UserId)
+		end)
+		if not result or string.find(result, "#", 1, true) then
+			return nil
+		end
+		return result
+	end
+
+	-- Every number in the reply must appear in the known text (rule 6: no invented numbers).
+	local function numbersKnown(text: string): boolean
+		for number in string.gmatch(text, "%d+") do
+			if not string.find(SparkyContext.knownText, number, 1, true) then
+				return false
+			end
+		end
+		return true
+	end
+
+	-- Asks the AI. Returns ("ok", text), "offtopic", "unsure" (reply not trusted) or "fail".
+	local function ask(player: Player, question: string): (string, string?)
 		local ok, result = pcall(function()
-			return generator:GenerateTextAsync({
-				UserPrompt = "Fact: " .. fact .. "\nQuestion: " .. question,
-				MaxTokens = 80,
-			})
+			return generator:GenerateTextAsync({ UserPrompt = question, MaxTokens = 120 })
 		end)
 		if not ok or typeof(result) ~= "table" or typeof(result.GeneratedText) ~= "string" then
 			warn("[Sparky] AI failed:", result)
-			return nil
+			return "fail"
 		end
 		-- Roblox puts this notice in front of every reply; the dialog shows it as a small note.
 		local text = string.gsub(
@@ -180,54 +201,77 @@ function Sparky.start()
 		)
 		text = string.gsub(text, "^%s+", "")
 		text = string.gsub(text, "%s+$", "")
-		-- New numbers would be invented facts (rule 6): the facts have none.
-		if text == "" or #text > AI_MAX_CHARS or string.find(text, "%d") then
-			return nil
+		if text == "" or string.find(string.upper(text), "OFFTOPIC", 1, true) then
+			return "offtopic"
 		end
-		local filtered: string? = nil
-		pcall(function()
-			local filterResult = TextService:FilterStringAsync(text, player.UserId, Enum.TextFilterContext.PublicChat)
-			filtered = filterResult:GetNonChatStringForUserAsync(player.UserId)
-		end)
-		if not filtered or string.find(filtered, "#", 1, true) then
-			return nil -- filter failed or hid words
+		if #text > AI_MAX_CHARS or not numbersKnown(text) then
+			return "unsure"
 		end
-		return filtered
+		local clean = filter(player, text)
+		if not clean then
+			return "unsure"
+		end
+		return "ok", clean
 	end
 
-	local function answer(player: Player, id: string)
-		local q = SparkyQuestions.byId[id]
-		if not q or busy[player] then
-			return
-		end
-		local token = (asking[player] or 0) + 1
-		asking[player] = token
-		talkUntil = os.clock() + TALK_PAUSE
-		if Strings.langFromLocale(player.LocaleId) ~= "en" then
-			say:FireClient(player, q.answer)
-			return
-		end
-		say:FireClient(player, "sparky.thinking", "thinking")
-		busy[player] = true
-		local reply: string? = nil
-		local done = false
-		task.spawn(function()
-			reply = aiAnswer(player, Strings.get(q.question, "en"), Strings.get(q.answer, "en"))
-			done = true
-		end)
-		local deadline = os.clock() + AI_TIMEOUT
-		while not done and os.clock() < deadline do
-			task.wait(0.1)
-		end
-		busy[player] = nil
-		if asking[player] ~= token or not talking[player] then
-			return -- the player asked something else or left
-		end
-		if reply then
-			say:FireClient(player, reply, "ai")
+	-- Sends Earth's answer now, or keeps it until the player talks to Sparky again.
+	-- fromAi: show the "made by AI" note (checked lines go without it).
+	local function deliver(player: Player, text: string, fromAi: boolean)
+		if talking[player] and player.Parent then
+			say:FireClient(player, text, "earth", fromAi)
 		else
-			say:FireClient(player, q.answer)
+			mailbox[player] = { text = text, fromAi = fromAi }
 		end
+	end
+
+	-- fallback: checked i18n answer key for quick buttons, used when the AI fails.
+	local function handleQuestion(player: Player, question: string, fallback: string?)
+		if busy[player] then
+			say:FireClient(player, "sparky.chat.busy")
+			return
+		end
+		busy[player] = true
+		talkUntil = os.clock() + TALK_PAUSE
+		say:FireClient(player, "sparky.thinking", "thinking")
+
+		local status: string, reply: string? = "fail", nil
+		local lang = Strings.langFromLocale(player.LocaleId)
+		if fallback and lang ~= "en" then
+			-- The AI writes Ukrainian badly: quick questions get the checked line instead.
+			status, reply = "ok", Strings.get(fallback, lang)
+		else
+			local done = false
+			task.spawn(function()
+				status, reply = ask(player, question)
+				done = true
+			end)
+			local deadline = os.clock() + AI_TIMEOUT
+			while not done and os.clock() < deadline do
+				task.wait(0.1)
+			end
+		end
+		if status == "offtopic" then
+			busy[player] = nil
+			say:FireClient(player, "sparky.chat.offtopic")
+			return
+		end
+		local answer: string? = reply
+		if status ~= "ok" then
+			answer = if fallback then Strings.get(fallback, lang) else nil
+		end
+		if not answer then
+			busy[player] = nil
+			say:FireClient(player, if status == "unsure" then "sparky.chat.unsure" else "sparky.chat.error")
+			return
+		end
+		local fromAi = status == "ok" and not (fallback and lang ~= "en")
+		say:FireClient(player, "sparky.chat.sending", "sending", ROUND_TRIP_SECONDS)
+		task.delay(ROUND_TRIP_SECONDS, function()
+			busy[player] = nil
+			if player.Parent then
+				deliver(player, answer, fromAi)
+			end
+		end)
 	end
 
 	prompt.Triggered:Connect(function(player)
@@ -237,25 +281,43 @@ function Sparky.start()
 			faceTarget = root.Position
 		end
 		talkUntil = os.clock() + TALK_PAUSE
-		say:FireClient(player, SparkyQuestions.greeting)
+		local mail = mailbox[player]
+		if mail then
+			mailbox[player] = nil
+			say:FireClient(player, mail.text, "earth", mail.fromAi)
+		else
+			say:FireClient(player, SparkyQuestions.greeting)
+		end
 	end)
 
-	talk.OnServerEvent:Connect(function(player, action: unknown, id: unknown)
+	talk.OnServerEvent:Connect(function(player, action: unknown, value: unknown)
 		if not talking[player] then
 			return
 		end
-		if action == "ask" and typeof(id) == "string" then
-			answer(player, id)
+		if action == "chat" and typeof(value) == "string" then
+			local text = string.sub((string.gsub(value, "^%s+", "")), 1, MAX_QUESTION_CHARS)
+			if text == "" then
+				return
+			end
+			if not filter(player, text) then
+				say:FireClient(player, "sparky.chat.filtered")
+				return
+			end
+			handleQuestion(player, text)
+		elseif action == "ask" and typeof(value) == "string" then
+			local q = SparkyQuestions.byId[value]
+			if q then
+				handleQuestion(player, Strings.get(q.question, Strings.langFromLocale(player.LocaleId)), q.answer)
+			end
 		elseif action == "bye" then
 			talking[player] = nil
-			asking[player] = nil
 			talkUntil = math.min(talkUntil, os.clock() + 1)
 		end
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
-		asking[player] = nil
 		busy[player] = nil
+		mailbox[player] = nil
 		talking[player] = nil
 	end)
 
