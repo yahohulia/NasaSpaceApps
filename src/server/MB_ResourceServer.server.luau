@@ -11,9 +11,11 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("MB_Config"))
 local SolarEvents = require(ReplicatedStorage:WaitForChild("MB_SolarEvents"))
+local eventsModule = ReplicatedStorage:FindFirstChild("MB_Events")
+local EventsConfig = if eventsModule then (require(eventsModule) :: any).Config else nil
 local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
 local P, B, S = Config.Player, Config.Base, Config.Storm
-local SOL = if Config.DEBUG_FAST then 60 else Config.SolSeconds -- real seconds per sol
+local SOL = require(ReplicatedStorage.Shared.Config).SolSeconds
 local rng = Random.new()
 
 -- Shared state + channels --------------------------------------------------------------------------
@@ -42,12 +44,16 @@ local function clamp100(v: number): number
 	return math.clamp(v, 0, 100)
 end
 
-local function scheduleStorm(now: number, first: boolean)
-	local wait = if first then S.FirstAfterSeconds else rng:NextNumber(S.MinSols, S.MaxSols) * SOL
-	if Config.DEBUG_FAST then
-		wait = math.min(wait, 45)
-	end
-	stormStart = now + wait + S.WarningSeconds
+-- Solar storms are started only by MB_EventDirector (MB_Events.Schedule / F2) via ServerStorage.MB_EventCommand.
+local stormWarning, stormDuration = S.WarningSeconds, S.DurationSeconds
+local o2Broken = false -- MB_Events O2Failure: the oxygen generator is broken until repaired
+local function scheduleStorm(_now: number, _first: boolean)
+	stormStart = math.huge -- no storm until the event director starts one
+end
+local function startSolarStorm(warning: number?, duration: number?)
+	stormWarning = warning or S.WarningSeconds
+	stormDuration = duration or S.DurationSeconds
+	stormStart = workspace:GetServerTimeNow() + stormWarning
 end
 
 local function resetBase()
@@ -69,6 +75,8 @@ local function resetBase()
 		baseState:SetAttribute("PanelEfficiency", 1)
 	end
 	baseState:SetAttribute("MissionStartedAt", startedAt)
+	o2Broken = false
+	baseState:SetAttribute("O2Broken", false)
 	scheduleStorm(startedAt, true)
 end
 resetBase()
@@ -91,6 +99,20 @@ resetEvent.Event:Connect(function()
 	resetBase()
 	for _, player in Players:GetPlayers() do
 		setupPlayer(player)
+	end
+end)
+
+-- Commands from MB_EventDirector.
+local eventCommand = ensure(ServerStorage, "BindableEvent", "MB_EventCommand") :: BindableEvent
+eventCommand.Event:Connect(function(command: string, a: any, b: any)
+	if command == "solarStorm" then
+		startSolarStorm(a, b)
+	elseif command == "addPower" then
+		power = clamp100(power + (a or 0))
+		baseState:SetAttribute("Power", power)
+	elseif command == "o2Failure" then
+		o2Broken = a == true
+		baseState:SetAttribute("O2Broken", o2Broken)
 	end
 end)
 
@@ -172,8 +194,8 @@ end
 
 -- Radiation storm schedule (real NASA DONKI flare each time) ---------------------------------------
 local function updateStorm(now: number): boolean
-	local warnAt = stormStart - S.WarningSeconds
-	local endAt = stormStart + S.DurationSeconds
+	local warnAt = stormStart - stormWarning
+	local endAt = stormStart + stormDuration
 	local phase = if now >= endAt
 		then "none"
 		elseif now >= stormStart then "active"
@@ -185,6 +207,7 @@ local function updateStorm(now: number): boolean
 		if previous == "none" then
 			stormEvent = SolarEvents.random(rng)
 			baseState:SetAttribute("StormClass", stormEvent.Class)
+			baseState:SetAttribute("StormFact", SolarEvents.factLine(stormEvent))
 			baseState:SetAttribute("StormEndsAt", endAt)
 			baseState:SetAttribute("StormStartsAt", stormStart)
 		end
@@ -197,10 +220,7 @@ local function updateStorm(now: number): boolean
 			baseState:SetAttribute("StormActive", false)
 			baseState:SetAttribute("StormStartsAt", 0)
 			baseState:SetAttribute("StormEndsAt", 0)
-			if previous == "active" then
-				-- One line with the real event behind this storm.
-				notify:FireAllClients("storm_fact", SolarEvents.factLine(stormEvent))
-			end
+			-- The real DONKI flare (MB_BaseState.StormFact) is shown on the event card by MB_EventUI.
 		end
 	end
 	if now >= endAt then
@@ -248,7 +268,11 @@ local function tick()
 	local panels = if typeof(efficiency) == "number" then efficiency else 1
 	local solar = if day then B.SolarPower * panels * (if stormActive then S.SolarFactor else 1) else 0
 	power = clamp100(power + (solar - B.BaseLoadPower) * dt)
-	if power > 0 and baseAir < 100 then
+	if o2Broken then
+		if EventsConfig then
+			baseAir -= EventsConfig.BASEAIR_DRAIN * dt -- broken generator: the air runs out
+		end
+	elseif power > 0 and baseAir < 100 then
 		baseAir += B.AirGenerator * dt
 		power = clamp100(power - B.GeneratorPower * dt)
 	end
@@ -374,7 +398,16 @@ local function bindAction(name: string, part: Instance)
 	prompt.MaxActivationDistance = Config.PromptDistance
 	prompt.RequiresLineOfSight = false
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
-	prompt.Triggered:Connect(handlers[name])
+	prompt.Triggered:Connect(function(player)
+		local root = rootOf(player)
+		if not prompt.Enabled or not root or (root.Position - part.Position).Magnitude > Config.PromptDistance then
+			return
+		end
+		if name == "Drink" and part:GetAttribute("PumpWorking") == false then
+			return -- the water pump is broken or switched off (WaterPump)
+		end
+		handlers[name](player)
+	end)
 	prompt.Parent = part
 end
 
