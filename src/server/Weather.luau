@@ -1,6 +1,8 @@
 -- Runs weather events built from NASA snapshots and replicates the current one
 -- to clients as JSON in ReplicatedStorage.WeatherState@Payload ("" = calm).
--- Until the sol loop exists, a demo loop plays every event in ORDER.
+-- Until the sol loop exists, a demo loop plays the events in ORDER. The dust storm is not in it: dust
+-- makes every solar panel dirty (MB_PanelCleaning), so it comes only from the mission's DustStorm event
+-- (EventDirector -> Weather.hold("dust", seconds)), while the demo loop waits.
 -- Studio test: ServerStorage.WeatherDebug:Fire("<id>") or :Fire("clear").
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -57,12 +59,13 @@ local BUILDERS: { [string]: () -> WeatherEvents.Payload? } = {
 		return liveOrSnapshot(WeatherEvents.cmeToMars, liveEnlil, enlilSnapshot)
 	end,
 }
-local ORDER = { "dust", "cold", "radiation", "flare", "cme" }
+local ORDER = { "cold", "radiation", "flare", "cme" }
 
 local Weather = {}
 
 local state: Folder
 local current: WeatherEvents.Payload? = nil
+local heldUntil = 0 -- os.clock() until which a mission event owns the weather (the demo loop waits)
 
 function Weather.set(id: string): boolean
 	local build = BUILDERS[id]
@@ -90,6 +93,23 @@ function Weather.clear()
 	current = nil
 	state:SetAttribute("Payload", "")
 	print("[weather] calm")
+end
+
+-- A mission event shows this weather for `seconds`; the demo loop stays quiet meanwhile.
+function Weather.hold(id: string, seconds: number)
+	if not state then
+		return
+	end
+	local untilTime = os.clock() + seconds
+	heldUntil = untilTime
+	if Weather.set(id) then
+		task.delay(seconds, function()
+			if heldUntil == untilTime then
+				heldUntil = 0
+				Weather.clear()
+			end
+		end)
+	end
 end
 
 function Weather.start()
@@ -123,9 +143,14 @@ function Weather.start()
 			while true do
 				for _, id in ORDER do
 					task.wait(DataMapping.demoCalmSeconds)
+					while os.clock() < heldUntil do
+						task.wait(1)
+					end
 					Weather.set(id)
 					task.wait(DataMapping.demoEventSeconds)
-					Weather.clear()
+					if os.clock() >= heldUntil then
+						Weather.clear()
+					end
 				end
 			end
 		end)

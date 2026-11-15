@@ -12,6 +12,7 @@
 local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -314,6 +315,7 @@ function SortGameClient.start()
 		camera.CameraType = Enum.CameraType.Scriptable
 		gui.Enabled = true
 		UserInputService.MouseIconEnabled = true
+		ProximityPromptService.Enabled = false -- the "Sort samples" prompt floats over the boxes; only for this player
 		freeze(true)
 		setInfo()
 	end
@@ -323,6 +325,7 @@ function SortGameClient.start()
 		closing = false
 		gui.Enabled = false
 		UserInputService.MouseIconEnabled = false -- first person hides the cursor
+		ProximityPromptService.Enabled = true
 		freeze(false)
 		setHover(nil)
 		for _, box in boxList do

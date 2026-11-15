@@ -4,6 +4,7 @@
 -- Radiation storms use real NASA DONKI flares from ReplicatedStorage.MB_SolarEvents.
 -- ServerStorage.MB_ResetMission (BindableEvent) restarts the mission ("Play again").
 local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +18,7 @@ local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
 local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
 local BagSpace = require(ReplicatedStorage.Shared.BagSpace)
 local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
+local PowerConfig = require(ReplicatedStorage.Shared.PowerConfig)
 local P, B, S = Config.Player, Config.Base, Config.Storm
 local SOL = require(ReplicatedStorage.Shared.Config).SolSeconds
 local rng = Random.new()
@@ -42,6 +44,36 @@ local harvestReadyAt = 0
 local stormStart = 0 -- server timestamp when the next flare begins
 local stormPhase = "none" -- "none" | "warning" | "active"
 local stormEvent = SolarEvents.Events[1]
+
+-- Share of full solar power the panels give: a clean panel 1, a dusty one PowerConfig.DirtyPanelOutput
+-- (MB_PanelCleaning keeps Dust at 0 or 1), a broken one 0. No panels in the place -> MB_Missions' value.
+local function panelOutput(): number
+	local panels = CollectionService:GetTagged(PowerConfig.PanelTag)
+	if #panels == 0 then
+		local efficiency = baseState:GetAttribute("PanelEfficiency")
+		return if typeof(efficiency) == "number" then efficiency else 1
+	end
+	local sum = 0
+	for _, panel in panels do
+		if panel:GetAttribute("Broken") ~= true then
+			local dust = panel:GetAttribute("Dust")
+			local d = if typeof(dust) == "number" then math.clamp(dust, 0, 1) else 0
+			sum += 1 - d * (1 - PowerConfig.DirtyPanelOutput)
+		end
+	end
+	return sum / #panels
+end
+
+-- A dust storm (Server.Weather "dust", started by the sol-2 DustStorm event) blocks most of the sunlight.
+local function dustStormNow(): boolean
+	local state = ReplicatedStorage:FindFirstChild("WeatherState")
+	local payload = state and state:GetAttribute("Payload")
+	if typeof(payload) ~= "string" or payload == "" then
+		return false
+	end
+	local ok, data = pcall(HttpService.JSONDecode, HttpService, payload)
+	return ok and type(data) == "table" and data.id == "dust"
+end
 
 local function clamp100(v: number): number
 	return math.clamp(v, 0, 100)
@@ -411,12 +443,11 @@ local function tick()
 
 	-- Base: solar power (dusty panels give less), oxygen generator, crew breathing.
 	local day = clock >= Config.DayStartHour and clock < Config.DayEndHour
-	local efficiency = baseState:GetAttribute("PanelEfficiency")
-	local panels = if typeof(efficiency) == "number" then efficiency else 1
-	local solar = if day then B.SolarPower * panels * (if stormActive then S.SolarFactor else 1) else 0
+	local sun = (if stormActive then S.SolarFactor else 1) * (if dustStormNow() then PowerConfig.DustStormSun else 1)
+	local solar = if day then PowerConfig.SolarPower * panelOutput() * sun else 0
 	local litRooms = baseState:GetAttribute("LitRooms")
 	local lights = LightsConfig.PowerPerLitRoom * (if typeof(litRooms) == "number" then litRooms else 0)
-	power = clamp100(power + (solar - B.BaseLoadPower - lights) * dt)
+	power = clamp100(power + (solar - PowerConfig.BaseLoadPower - lights) * dt)
 	if o2Broken then
 		if EventsConfig then
 			baseAir -= EventsConfig.BASEAIR_DRAIN * dt -- broken generator: the air runs out
