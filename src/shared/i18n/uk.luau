@@ -87,6 +87,7 @@ return {
 	["sparky.chat.busy"] = "Зачекай трохи. Ми ще чекаємо відповідь Землі.",
 	["sparky.chat.unsure"] = "Земля не впевнена. Спробуй спитати інакше.",
 	["sparky.chat.error"] = "Зараз нема сигналу. Спробуй трохи згодом.",
+	["sparky.chat.nosignal"] = "Нема сигналу! Зараз Сонце між Марсом і Землею, і радіо не проходить. Спитай мене пізніше.",
 	["weather.label.archived"] = "АРХІВ · {date}",
 	["weather.label.live"] = "НАЖИВО · {date}",
 	["weather.value.Low"] = "низький",
