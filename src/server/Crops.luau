@@ -115,6 +115,14 @@ end
 
 -- Planting and harvest ------------------------------------------------------------------------------
 
+-- Tells the mission director (MissionDirector) that a crew objective happened.
+local function objectiveDone(player: Player?, id: string)
+	local event = game:GetService("ServerStorage"):FindFirstChild("MB_ObjectiveDone")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, id)
+	end
+end
+
 local function plant(rack: Rack, player: Player)
 	local id = player:GetAttribute("CarrySeed")
 	local crop = if typeof(id) == "string" then CropConfig.get(id) else nil
@@ -144,6 +152,7 @@ local function plant(rack: Rack, player: Player)
 	redraw(rack)
 	publish(rack)
 	notify:FireClient(player, "crop.toast.planted", { crop = crop.id, n = cost })
+	objectiveDone(player, "plant")
 	task.delay(3.8, function()
 		notify:FireClient(player, "crop.fact." .. crop.id)
 	end)
@@ -170,6 +179,7 @@ local function harvest(rack: Rack, player: Player)
 	redraw(rack)
 	publish(rack)
 	notify:FireClient(player, "crop.toast.harvested", { crop = crop.id, food = food })
+	objectiveDone(player, "harvest")
 end
 
 -- Growth --------------------------------------------------------------------------------------------

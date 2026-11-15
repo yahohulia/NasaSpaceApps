@@ -51,6 +51,14 @@ local mailbox: { [Player]: { text: string, fromAi: boolean } } = {} -- Earth's a
 local talking: { [Player]: boolean } = {} -- players with the dialog open
 local activeRover: Model? = nil
 
+-- Tells the mission director (MissionDirector) that a crew objective happened.
+local function objectiveDone(player: Player?, id: string)
+	local event = ServerStorage:FindFirstChild("MB_ObjectiveDone")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, id)
+	end
+end
+
 local function playerRoot(player: Player): BasePart?
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -247,6 +255,7 @@ function Sparky.start()
 	-- Sends Earth's answer now, or keeps it until the player talks to Sparky again.
 	-- fromAi: show the "made by AI" note (checked lines go without it).
 	local function deliver(player: Player, text: string, fromAi: boolean)
+		objectiveDone(player, "earth")
 		if talking[player] and player.Parent then
 			say:FireClient(player, text, "earth", fromAi)
 		else
