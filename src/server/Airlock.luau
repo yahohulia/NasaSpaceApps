@@ -1,73 +1,67 @@
---!strict
--- Airlock doors. The two airlock doors are sliding doors (Models tagged "SlidingDoor"
--- with a "Requires" attribute, built in Studio: Workspace.MarsBaseFixes.AirlockDoors):
---   OuterDoor (to Mars), Requires = "Suit": opens only for a player in the space suit
---     who is not kept inside by the medic (Radiation sets "OutsideBlocked").
---   InnerDoor (airlock <-> base), Requires = "NoSuit": opens only after the suit is off.
--- The suit locker is inside the airlock, between the two doors (Suit.luau).
--- Opening and blocking happen on the clients (Client.DoorClient). Here the server only
--- tells a player who stands at a shut door what to do.
+-- Airlock teleport pads.
+-- Any BasePart tagged "TeleportPad" with a string attribute "Target" moves a player
+-- who steps on it to the sibling part with that name (its CFrame is the landing spot).
+-- The pads and landing spots are built in Studio (Workspace.Base.Habitat.Airlock).
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 
 local Notice = require(script.Parent.Notice)
 
-local TAG = "SlidingDoor"
-local HINT_DISTANCE = 5 -- studs from the door centre
-local HINT_COOLDOWN = 6 -- seconds between two hints for the same player
-local CHECK_SECONDS = 0.5
+local TAG = "TeleportPad"
+local COOLDOWN_SECONDS = 1.5
 
 local Airlock = {}
 
-local lastHint: { [Player]: number } = {}
+local lastUse: { [Player]: number } = {}
 
--- The i18n key that explains why `player` may not pass, or nil if they may.
-local function blockedReason(player: Player, rule: any): string?
-	local suitOn = player:GetAttribute("SuitOn") == true
-	if rule == "Suit" then
-		if not suitOn then
-			return "suit.need"
-		elseif player:GetAttribute("OutsideBlocked") == true then
-			return "radiation.blocked"
-		end
-	elseif rule == "NoSuit" and suitOn then
-		return "suit.take_off_first"
+local function onTouched(pad: BasePart, hit: BasePart)
+	local character = hit:FindFirstAncestorOfClass("Model")
+	if not character then
+		return
 	end
-	return nil
+	local player = Players:GetPlayerFromCharacter(character)
+	if not player then
+		return
+	end
+
+	local now = os.clock()
+	if (lastUse[player] or 0) + COOLDOWN_SECONDS > now then
+		return
+	end
+
+	local targetName = pad:GetAttribute("Target")
+	local container = pad.Parent
+	local target = if typeof(targetName) == "string" and container then container:FindFirstChild(targetName) else nil
+	if not (target and target:IsA("BasePart")) then
+		warn(`[Airlock] {pad:GetFullName()} has no valid Target`)
+		return
+	end
+
+	lastUse[player] = now
+	-- Pads with LeadsOutside=true are closed to players the medic keeps inside (Radiation).
+	if pad:GetAttribute("LeadsOutside") == true and player:GetAttribute("OutsideBlocked") == true then
+		Notice.send(player, "radiation.blocked", "alert")
+		return
+	end
+	character:PivotTo(target.CFrame)
 end
 
-local function check()
-	local now = os.clock()
-	for _, door in CollectionService:GetTagged(TAG) do
-		local rule = door:GetAttribute("Requires")
-		if rule ~= nil and door:IsA("Model") then
-			local centre = door:GetPivot().Position
-			for _, player in Players:GetPlayers() do
-				local character = player.Character
-				local root = character and character:FindFirstChild("HumanoidRootPart")
-				if root and root:IsA("BasePart") then
-					local offset = root.Position - centre
-					local near = Vector3.new(offset.X, 0, offset.Z).Magnitude < HINT_DISTANCE
-					local reason = if near then blockedReason(player, rule) else nil
-					if reason and (lastHint[player] or 0) + HINT_COOLDOWN < now then
-						lastHint[player] = now
-						Notice.send(player, reason, if reason == "radiation.blocked" then "alert" else "warn")
-					end
-				end
-			end
-		end
+local function bind(instance: Instance)
+	if instance:IsA("BasePart") then
+		local pad = instance
+		pad.Touched:Connect(function(hit)
+			onTouched(pad, hit)
+		end)
 	end
 end
 
 function Airlock.start()
+	for _, instance in CollectionService:GetTagged(TAG) do
+		bind(instance)
+	end
+	CollectionService:GetInstanceAddedSignal(TAG):Connect(bind)
 	Players.PlayerRemoving:Connect(function(player)
-		lastHint[player] = nil
-	end)
-	task.spawn(function()
-		while true do
-			task.wait(CHECK_SECONDS)
-			check()
-		end
+		lastUse[player] = nil
 	end)
 end
 

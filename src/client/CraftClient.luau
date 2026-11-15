@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
+local CropModels = require(ReplicatedStorage.Shared.CropModels)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local CraftClient = {}
@@ -164,6 +165,7 @@ function CraftClient.start()
 	end
 
 	local bagView: Instance? = nil
+	local cropView: Instance? = nil
 	local function renderInventory()
 		table.clear(spinning)
 		for _, child in inv:GetChildren() do
@@ -171,12 +173,32 @@ function CraftClient.start()
 				child:Destroy()
 			end
 		end
-		local items = if bagView then bagView:GetChildren() else {}
+		-- One bag of CraftConfig.BagSize places: samples first, then seed packets and harvest from
+		-- the greenhouse (Player.CropBag, server: Crops.luau). The server keeps the total <= BagSize.
+		local items: { Instance } = if bagView then bagView:GetChildren() else {}
+		local crops: { Instance } = {}
+		if cropView then
+			for _, item in cropView:GetChildren() do
+				if item:IsA("StringValue") then
+					table.insert(crops, item)
+				end
+			end
+			table.sort(crops, function(a, b)
+				return num(a, "Order") < num(b, "Order")
+			end)
+		end
 		for i = 1, CraftConfig.BagSize do
-			local item = items[i]
-			local vf = slot(i, item ~= nil)
-			if item then
-				showInSlot(vf, item)
+			local sample = items[i]
+			local crop = if sample then nil else crops[i - #items]
+			if sample then
+				showInSlot(slot(i, true), sample)
+			elseif crop and crop:IsA("StringValue") then
+				local seed = crop.Name == "Seed"
+				local tint = if seed then Color3.fromRGB(44, 40, 30) else Color3.fromRGB(32, 50, 34)
+				local model = if seed then CropModels.packet(crop.Value) else CropModels.produce(crop.Value, i)
+				showInSlot(slot(i, true, tint), model)
+			else
+				slot(i, false)
 			end
 		end
 		for i = 1, num(player, "CarryParts") do
@@ -195,9 +217,13 @@ function CraftClient.start()
 		end
 	end)
 
+	local function cropCount(): number
+		return if cropView then #cropView:GetChildren() else 0
+	end
+
 	local function render()
 		local parts = {
-			t("craft.hud.bag", { n = num(player, "BagSamples"), max = CraftConfig.BagSize }),
+			t("craft.hud.bag", { n = num(player, "BagSamples") + cropCount(), max = CraftConfig.BagSize }),
 			t("craft.hud.parts", { n = num(player, "CarryParts") }),
 			t("craft.hud.store", {
 				iron = num(store, "Iron"),
@@ -220,12 +246,31 @@ function CraftClient.start()
 		store:GetAttributeChangedSignal(key):Connect(render)
 	end
 	render()
+	task.spawn(function()
+		local folder = player:WaitForChild("CropBag", 60)
+		if folder then
+			cropView = folder
+			local function changed()
+				renderInventory()
+				render()
+			end
+			folder.ChildAdded:Connect(changed)
+			folder.ChildRemoved:Connect(changed)
+			changed()
+		end
+	end)
 
 	local toastId = 0
 	local fade = TweenInfo.new(0.25)
 	notify.OnClientEvent:Connect(function(key: string, vars: { [string]: string | number }?)
 		toastId += 1
 		local id = toastId
+		-- a crop id in vars ("Lettuce") becomes its name in the player's language
+		if vars and typeof(vars.crop) == "string" then
+			local named = table.clone(vars)
+			named.crop = t("crop.name." .. vars.crop)
+			vars = named
+		end
 		toast.Text = t(key, vars)
 		TweenService:Create(toast, fade, { TextTransparency = 0, BackgroundTransparency = 0.1 }):Play()
 		task.delay(TOAST_SECONDS, function()
