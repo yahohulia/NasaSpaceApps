@@ -164,6 +164,24 @@ function CraftClient.start()
 		return vf
 	end
 
+	-- a chunk of dug ice: two cloudy, slightly see-through blocks
+	local function iceChunk(seed: number): Model
+		local rng = Random.new(seed)
+		local model = Instance.new("Model")
+		for k = 1, 2 do
+			local p = Instance.new("Part")
+			p.Size = if k == 1 then Vector3.new(0.8, 0.55, 0.65) else Vector3.new(0.45, 0.4, 0.4)
+			p.Material = Enum.Material.Glass
+			p.Color = Color3.fromRGB(196, 226, 240)
+			p.Transparency = 0.15
+			p.Reflectance = 0.1
+			p.CFrame = CFrame.new(if k == 1 then 0 else 0.35, if k == 1 then 0 else 0.3, 0)
+				* CFrame.Angles(rng:NextNumber() * 0.6, rng:NextNumber() * 3, rng:NextNumber() * 0.6)
+			p.Parent = model
+		end
+		return model
+	end
+
 	local bagView: Instance? = nil
 	local cropView: Instance? = nil
 	local function renderInventory()
@@ -187,11 +205,15 @@ function CraftClient.start()
 				return num(a, "Order") < num(b, "Order")
 			end)
 		end
+		local ice = math.floor(num(player, "Ice")) -- ice dug at the drill (MB_ResourceServer)
 		for i = 1, CraftConfig.BagSize do
 			local sample = items[i]
-			local crop = if sample then nil else crops[i - #items]
+			local isIce = not sample and i <= #items + ice
+			local crop = if sample or isIce then nil else crops[i - #items - ice]
 			if sample then
 				showInSlot(slot(i, true), sample)
+			elseif isIce then
+				showInSlot(slot(i, true, Color3.fromRGB(28, 44, 60)), iceChunk(i))
 			elseif crop and crop:IsA("StringValue") then
 				local seed = crop.Name == "Seed"
 				local tint = if seed then Color3.fromRGB(44, 40, 30) else Color3.fromRGB(32, 50, 34)
@@ -206,6 +228,7 @@ function CraftClient.start()
 		end
 	end
 	player:GetAttributeChangedSignal("CarryParts"):Connect(renderInventory)
+	player:GetAttributeChangedSignal("Ice"):Connect(renderInventory)
 	renderInventory()
 	task.spawn(function()
 		local folder = player:WaitForChild("SampleBag", 30)
@@ -223,7 +246,10 @@ function CraftClient.start()
 
 	local function render()
 		local parts = {
-			t("craft.hud.bag", { n = num(player, "BagSamples") + cropCount(), max = CraftConfig.BagSize }),
+			t("craft.hud.bag", {
+				n = num(player, "BagSamples") + cropCount() + math.floor(num(player, "Ice")),
+				max = CraftConfig.BagSize,
+			}),
 			t("craft.hud.parts", { n = num(player, "CarryParts") }),
 			t("craft.hud.store", {
 				iron = num(store, "Iron"),
@@ -239,7 +265,7 @@ function CraftClient.start()
 		panel.Size = UDim2.fromOffset(math.max(360, line.TextBounds.X + 32), 30)
 	end
 
-	for _, key in { "BagSamples", "CarryParts", "CarryingDrill" } do
+	for _, key in { "BagSamples", "CarryParts", "CarryingDrill", "Ice" } do
 		player:GetAttributeChangedSignal(key):Connect(render)
 	end
 	for _, key in { "Iron", "Nickel", "Manganese", "Parts" } do
