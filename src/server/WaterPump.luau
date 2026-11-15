@@ -1,9 +1,11 @@
 --!strict
 -- Water pump at the water station (part tagged MB_WaterStation, built in Studio). It runs from the
 -- start and breaks at a random moment (SolderConfig.PumpBreakMin..Max seconds of work). To fix it:
--- switch the power off, take out the broken board, solder it at the soldering station
--- (SolderStation), put it back and switch the power on.
+-- switch the Water room off on the light panel in the Power room, take out the broken board, solder
+-- it at the soldering station (SolderStation), put it back and switch the Water room on again.
 --
+-- The pump has no switch of its own: its power is the Water room's switch on the light panel
+-- (BaseLights sets LightsOn on Workspace.Base.Zones.WaterStationZone; we only read it).
 -- Station attributes: PumpPowered, PumpBroken, PumpBoardIn (booleans) and PumpWorking (all three
 -- good). MB_ResourceServer checks PumpWorking before it gives water.
 local Players = game:GetService("Players")
@@ -12,17 +14,20 @@ local ServerStorage = game:GetService("ServerStorage")
 local CollectionService = game:GetService("CollectionService")
 
 local Config = require(ReplicatedStorage.Shared.SolderConfig)
+local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 local Notice = require(script.Parent.Notice)
 local SolderStation = require(script.Parent.SolderStation)
 
 local KIND = "WaterPump"
+local ROOM_ZONE = "WaterStationZone" -- the Water room on the light panel
 local WaterPump = {}
 
 type Pump = {
 	station: BasePart,
 	workedFor: number, -- seconds of work since the last repair
 	breakAt: number, -- it breaks after this many seconds of work
+	waitsForPower: boolean, -- fixed board is back in; cheer when the room is switched on
 	refresh: () -> (),
 }
 
@@ -47,11 +52,21 @@ end
 
 local function setup(pump: Pump)
 	local station = pump.station
-	station:SetAttribute("PumpPowered", true)
 	station:SetAttribute("PumpBroken", false)
 	station:SetAttribute("PumpBoardIn", true)
 	pump.workedFor = 0
 	pump.breakAt = nextBreak()
+	pump.waitsForPower = false
+end
+
+-- The Water room's zone part (nil if the place has none: then the pump always has power).
+local function roomZone(): BasePart?
+	local node: Instance? = workspace
+	for _, name in LightsConfig.ZonesFolder do
+		node = node and node:FindFirstChild(name)
+	end
+	local zone = node and node:FindFirstChild(ROOM_ZONE)
+	return if zone and zone:IsA("BasePart") then zone else nil
 end
 
 local function bind(station: Instance)
@@ -78,39 +93,6 @@ local function bind(station: Instance)
 	boardPrompt.MaxActivationDistance = Config.Distance
 	boardPrompt.RequiresLineOfSight = false
 	boardPrompt.Parent = station
-
-	-- Power switch: a separate box beside the pump (click it or press Q).
-	local switch = Instance.new("Part")
-	switch.Name = "PumpPowerSwitch"
-	switch.Size = Vector3.new(1.6, 1, 0.3)
-	switch.CFrame = station.CFrame * CFrame.new(2, 0.7, 0)
-	switch.Anchored = true
-	switch.CanCollide = false
-	switch.Material = Enum.Material.SmoothPlastic
-	switch.Parent = station
-	local surface = Instance.new("SurfaceGui")
-	surface.Face = Enum.NormalId.Front
-	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	surface.PixelsPerStud = 100
-	surface.Parent = switch
-	local caption = Instance.new("TextLabel")
-	caption.Size = UDim2.fromScale(1, 1)
-	caption.BackgroundTransparency = 1
-	caption.TextColor3 = Color3.new(1, 1, 1)
-	caption.Font = Enum.Font.GothamBold
-	caption.TextScaled = true
-	caption.Parent = surface
-	local powerPrompt = Instance.new("ProximityPrompt")
-	powerPrompt.Name = "PowerSupply"
-	powerPrompt.KeyboardKeyCode = Enum.KeyCode.Q
-	powerPrompt.GamepadKeyCode = Enum.KeyCode.ButtonY
-	powerPrompt.MaxActivationDistance = Config.Distance
-	powerPrompt.RequiresLineOfSight = false
-	powerPrompt.ObjectText = Strings.get("pump.power.name", "en")
-	powerPrompt.Parent = switch
-	local click = Instance.new("ClickDetector")
-	click.MaxActivationDistance = Config.Distance
-	click.Parent = switch
 
 	-- Broken look: sparks, a blinking red light and a "!" sign above the pump.
 	local sparks = Instance.new("Sparkles")
@@ -145,7 +127,13 @@ local function bind(station: Instance)
 	corner.CornerRadius = UDim.new(0, 10)
 	corner.Parent = signText
 
-	local pump: Pump = { station = station, workedFor = 0, breakAt = nextBreak(), refresh = function() end }
+	local pump: Pump = {
+		station = station,
+		workedFor = 0,
+		breakAt = nextBreak(),
+		waitsForPower = false,
+		refresh = function() end,
+	}
 	pumps[station] = pump
 	setup(pump)
 
@@ -155,9 +143,6 @@ local function bind(station: Instance)
 		local boardIn = station:GetAttribute("PumpBoardIn") == true
 		local working = powered and boardIn and not broken
 		station:SetAttribute("PumpWorking", working)
-		switch.Color = if powered then Color3.fromRGB(35, 120, 86) else Color3.fromRGB(90, 61, 45)
-		caption.Text = Strings.get(if powered then "pump.power.on" else "pump.power.off", "en")
-		powerPrompt.ActionText = Strings.get(if powered then "pump.power.switchOff" else "pump.power.switchOn", "en")
 		boardPrompt.Enabled = broken or not boardIn
 		boardPrompt.ActionText = Strings.get(if boardIn then "pump.prompt.takeBoard" else "pump.prompt.putBoard", "en")
 		sparks.Enabled = broken and boardIn and powered
@@ -174,22 +159,26 @@ local function bind(station: Instance)
 	end
 	pump.refresh = refresh
 
-	local lastToggle = 0
-	local function toggle(player: Player)
-		if not nearby(player, station) or os.clock() - lastToggle < 0.3 then
+	-- Power follows the Water room switch on the light panel.
+	local function followRoom()
+		local zone = roomZone()
+		local powered = zone == nil or zone:GetAttribute("LightsOn") ~= false
+		if powered == (station:GetAttribute("PumpPowered") == true) then
 			return
 		end
-		lastToggle = os.clock()
-		local powered = station:GetAttribute("PumpPowered") ~= true
 		station:SetAttribute("PumpPowered", powered)
-		if powered and station:GetAttribute("PumpWorking") == true then
+		if powered and pump.waitsForPower then
+			pump.waitsForPower = false
 			toAll("pump.toast.working", "info")
-		elseif powered and station:GetAttribute("PumpBoardIn") ~= true then
-			Notice.send(player, "pump.toast.noBoard", "warn")
 		end
 	end
-	powerPrompt.Triggered:Connect(toggle)
-	click.MouseClick:Connect(toggle)
+	local zone = roomZone()
+	if zone then
+		zone:GetAttributeChangedSignal("LightsOn"):Connect(followRoom)
+	else
+		warn("[WaterPump] no " .. ROOM_ZONE .. " zone: the pump has no power switch")
+	end
+	followRoom()
 
 	boardPrompt.Triggered:Connect(function(player)
 		if not nearby(player, station) then
@@ -224,7 +213,12 @@ local function bind(station: Instance)
 			station:SetAttribute("PumpBoardIn", true)
 			station:SetAttribute("PumpBroken", false)
 			pump.workedFor, pump.breakAt = 0, nextBreak()
-			Notice.send(player, "pump.toast.boardBack", "info")
+			if station:GetAttribute("PumpPowered") == true then
+				toAll("pump.toast.working", "info")
+			else
+				pump.waitsForPower = true
+				Notice.send(player, "pump.toast.boardBack", "info")
+			end
 		end
 	end)
 
