@@ -321,4 +321,10 @@ return {
 	["water.toast.no_ice"] = "No ice to melt. Dig some ice with the drill outside.",
 	["water.toast.bag_full"] = "Your bag is full. Drink a bottle or sort your samples first.",
 	["water.drink"] = "Drink water ({n}) [{key}]",
+	["food.tube.prompt"] = "Take a food tube",
+	["food.tube.object"] = "Food tube crate",
+	["food.tube.took"] = "You took a food tube ({n}/{max}). It is in your bag: press G to eat it.",
+	["food.tube.none_left"] = "You already took your {max} food tubes. Grow food in the greenhouse!",
+	["food.tube.bag_full"] = "Your bag is full. Eat something or sort your samples first.",
+	["crop.name.FoodTube"] = "Food tube",
 }

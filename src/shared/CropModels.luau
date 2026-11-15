@@ -273,6 +273,33 @@ end
 
 local produce: { [string]: Builder } = {}
 
+-- a space food tube (from the food tube crate in the storage room, FoodTubes.luau): a squeezable
+-- metal tube with a coloured cap, lying on its side
+produce.FoodTube = function(model, _h, _g, _rng)
+	local body = part(
+		model,
+		"Tube",
+		Vector3.new(0.85, 0.32, 0.32),
+		CFrame.new(0, 0.16, 0),
+		Color3.fromRGB(205, 210, 218),
+		Enum.Material.Metal,
+		0.15
+	)
+	body.Shape = Enum.PartType.Cylinder
+	part(
+		model,
+		"Crimp",
+		Vector3.new(0.12, 0.06, 0.36),
+		CFrame.new(-0.48, 0.16, 0),
+		Color3.fromRGB(180, 186, 196),
+		Enum.Material.Metal
+	)
+	local cap =
+		part(model, "Cap", Vector3.new(0.14, 0.18, 0.18), CFrame.new(0.49, 0.16, 0), Color3.fromRGB(230, 120, 40))
+	cap.Shape = Enum.PartType.Cylinder
+	part(model, "Label", Vector3.new(0.4, 0.02, 0.2), CFrame.new(0, 0.325, 0), Color3.fromRGB(70, 130, 200))
+end
+
 -- a head of red lettuce
 produce.Lettuce = function(model, _h, _g, rng)
 	for i = 1, 9 do
