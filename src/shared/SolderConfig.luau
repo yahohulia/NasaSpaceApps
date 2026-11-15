@@ -26,7 +26,4 @@ return table.freeze({
 	-- Water pump: breaks at a random moment while it runs.
 	PumpBreakMin = 150, -- seconds of work before it may break
 	PumpBreakMax = 330,
-	-- The pump's power shield, beside the soldering station in the Power room (floor point; it faces
-	-- the same way as the bench). An MB_PumpPowerPanel anchor part in MB_Interactables overrides it.
-	PumpPanelCFrame = CFrame.new(43.5, 2.3, -93.5),
 })
