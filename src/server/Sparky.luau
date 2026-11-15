@@ -9,10 +9,13 @@
 --   SparkyTalk:FireServer("bye")
 -- The question is filtered (TextService), then the AI (Roblox TextGenerator, context in
 -- SparkyContext) answers as Mission Control, or says OFFTOPIC and Sparky turns it down at once.
--- A good question "flies" to Earth and back: the answer shows after 2 x Config.CommDelayMinutes
--- of game time. If the player is gone by then, Sparky keeps it until they talk again.
--- SparkySay:FireClient(player, keyOrText, kind?, extra?) where kind is
---   nil (plain line), "thinking", "sending" (extra = real seconds until the answer)
+-- A good question "flies" to Earth and back. The delay is today's real Mars -> Earth light
+-- time from NASA JPL Horizons (Horizons.luau), counted in game minutes (the game clock is
+-- sped up, so the wait is short in real time). If the player is gone by then, Sparky keeps
+-- the answer until they talk again.
+-- SparkySay:FireClient(player, keyOrText, kind?, extra?, info?) where kind is
+--   nil (plain line), "thinking",
+--   "sending" (extra = real seconds until the answer, info = { min, date, live, source })
 --   or "earth" (Earth's answer; extra = true when the AI wrote it).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,6 +24,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local TextService = game:GetService("TextService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Horizons = require(script.Parent.Horizons)
 local SparkyContext = require(script.Parent.SparkyContext)
 local SparkyQuestions = require(ReplicatedStorage.Shared.SparkyQuestions)
 local Strings = require(ReplicatedStorage.Shared.Strings)
@@ -33,8 +37,10 @@ local TALK_DISTANCE = 16 -- a dialog ends when the player walks further than thi
 local AI_TIMEOUT = 8 -- seconds to wait for the AI before "no signal"
 local AI_MAX_CHARS = 320 -- longer replies are treated as off-topic
 local MAX_QUESTION_CHARS = 120
--- Round trip in real seconds: game minutes -> real seconds (a sol is 24 game hours).
-local ROUND_TRIP_SECONDS = 2 * Config.CommDelayMinutes * 60 * Config.SolSeconds / (24 * 60 * 60)
+-- Game minutes -> real seconds (a sol is 24 game hours of Config.SolSeconds real seconds).
+local function gameMinutesToSeconds(minutes: number): number
+	return minutes * 60 * Config.SolSeconds / (24 * 60 * 60)
+end
 
 local Sparky = {}
 
@@ -130,6 +136,7 @@ local function driveTo(model: Model, point: Vector3)
 end
 
 function Sparky.start()
+	Horizons.start() -- today's real signal delay (live request, snapshot fallback)
 	local habitat = workspace:FindFirstChild("Base") and workspace.Base:FindFirstChild("Habitat")
 	local model = habitat and habitat:FindFirstChild("Sparky")
 	local pathFolder = habitat and habitat:FindFirstChild("SparkyPath")
@@ -157,9 +164,24 @@ function Sparky.start()
 
 	local generator = Instance.new("TextGenerator")
 	generator.Name = "SparkyBrain"
-	generator.SystemPrompt = SparkyContext.systemPrompt
 	generator.Temperature = 0.5
 	generator.Parent = ServerStorage
+
+	-- The prompt includes today's delay; rebuilt when Horizons' answer arrives.
+	local knownText = ""
+	local promptFor = ""
+	local function refreshPrompt()
+		local delay = Horizons.get()
+		local minutes = math.round(delay.minutes)
+		local key = `{minutes}|{delay.date}`
+		if key ~= promptFor then
+			promptFor = key
+			local systemPrompt, known = SparkyContext.build(minutes, delay.date)
+			generator.SystemPrompt = systemPrompt
+			knownText = known
+		end
+	end
+	refreshPrompt()
 
 	-- Filters text for this player. Returns nil when the filter fails or hides words.
 	local function filter(player: Player, text: string): string?
@@ -177,7 +199,7 @@ function Sparky.start()
 	-- Every number in the reply must appear in the known text (rule 6: no invented numbers).
 	local function numbersKnown(text: string): boolean
 		for number in string.gmatch(text, "%d+") do
-			if not string.find(SparkyContext.knownText, number, 1, true) then
+			if not string.find(knownText, number, 1, true) then
 				return false
 			end
 		end
@@ -186,6 +208,7 @@ function Sparky.start()
 
 	-- Asks the AI. Returns ("ok", text), "offtopic", "unsure" (reply not trusted) or "fail".
 	local function ask(player: Player, question: string): (string, string?)
+		refreshPrompt()
 		local ok, result = pcall(function()
 			return generator:GenerateTextAsync({ UserPrompt = question, MaxTokens = 120 })
 		end)
@@ -265,8 +288,16 @@ function Sparky.start()
 			return
 		end
 		local fromAi = status == "ok" and not (fallback and lang ~= "en")
-		say:FireClient(player, "sparky.chat.sending", "sending", ROUND_TRIP_SECONDS)
-		task.delay(ROUND_TRIP_SECONDS, function()
+		-- There and back: the same light time each way.
+		local delay = Horizons.get()
+		local roundTrip = gameMinutesToSeconds(2 * delay.minutes)
+		say:FireClient(player, "sparky.chat.sending", "sending", roundTrip, {
+			min = math.round(delay.minutes),
+			date = delay.date,
+			live = delay.live,
+			source = delay.source,
+		})
+		task.delay(roundTrip, function()
 			busy[player] = nil
 			if player.Parent then
 				deliver(player, answer, fromAi)
