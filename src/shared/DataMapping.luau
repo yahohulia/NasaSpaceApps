@@ -23,7 +23,6 @@ export type Look = {
 	atmosphereColor: Color3?,
 	brightnessScale: number?, -- multiplies Lighting.Brightness
 	fadeSeconds: number,
-	clockTime: number?, -- Lighting.ClockTime while the event is on (nil = keep)
 }
 
 local DataMapping = {}
@@ -76,11 +75,6 @@ DataMapping.looks = table.freeze({
 		atmosphereColor = Color3.fromRGB(190, 120, 70),
 		brightnessScale = 0.45,
 		fadeSeconds = 4,
-	}),
-	-- Cold night: the sun sets and the starry night comes (SkyClient's night preset).
-	cold = table.freeze({
-		fadeSeconds = 8,
-		clockTime = 21.5,
 	}),
 	-- Solar flare: a quick, slightly brighter and whiter sky.
 	flare = table.freeze({
