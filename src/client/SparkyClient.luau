@@ -453,22 +453,36 @@ function SparkyClient.start()
 		return
 	end
 	-- keyOrText: an i18n key, or plain text (Earth's answers, EventDirector).
-	-- kind: nil | "thinking" | "sending" (extra = seconds until the answer) | "earth" (extra = AI wrote it).
-	say.OnClientEvent:Connect(function(keyOrText: string, kind: string?, extra: unknown)
+	-- kind: nil | "thinking" | "earth" (extra = AI wrote it)
+	--   | "sending" (extra = seconds until the answer, info = { min, date, live, source }).
+	say.OnClientEvent:Connect(function(keyOrText: string, kind: string?, extra: unknown, info: unknown)
 		token += 1
 		local myToken = token
 		checking = kind == "thinking"
+		local text
 		if kind == "sending" then
 			answerAt = os.clock() + (if typeof(extra) == "number" then extra else 0)
+			local delay = if typeof(info) == "table" then info :: any else {}
+			text = Strings.get(keyOrText, lang, { min = tostring(delay.min or "?") })
+			-- Where today's delay comes from: LIVE only when fetched this session.
+			local label = Strings.get(
+				if delay.live then "weather.label.live" else "weather.label.archived",
+				lang,
+				{ date = tostring(delay.date or "") }
+			)
+			dialog.note.Text = "📡 " .. tostring(delay.source or "") .. " · " .. label
+			dialog.note.Visible = true
 		elseif kind == "earth" then
 			answerAt = 0
 			dialog.status.Visible = false
+			text = Strings.get("sparky.chat.earth", lang, { text = keyOrText })
+			dialog.note.Text = "🤖 " .. Strings.get("sparky.ai.note", lang)
+			dialog.note.Visible = extra == true
+		else
+			text = Strings.get(keyOrText, lang)
+			dialog.note.Visible = false
 		end
-		local text = if kind == "earth"
-			then Strings.get("sparky.chat.earth", lang, { text = keyOrText })
-			else Strings.get(keyOrText, lang)
 		local length = utf8.len(text) or #text
-		dialog.note.Visible = kind == "earth" and extra == true
 		dialog.label.Text = text
 		refreshButtons()
 		setOpen(true)

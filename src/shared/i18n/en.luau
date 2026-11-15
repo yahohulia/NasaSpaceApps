@@ -84,7 +84,7 @@ return {
 	["sparky.ai.note"] = "Earth's answer is made by AI. It can make mistakes.",
 	["sparky.chat.placeholder"] = "Ask Earth a question...",
 	["sparky.chat.send"] = "Send",
-	["sparky.chat.sending"] = "Sent to Earth! A radio signal needs time to fly that far. Wait for the answer.",
+	["sparky.chat.sending"] = "Sent to Earth! Today the signal flies {min} min each way. Let's wait for the answer.",
 	["sparky.chat.waiting"] = "📡 Answer from Earth in {min} min",
 	["sparky.chat.earth"] = "🌍 Earth: {text}",
 	["sparky.chat.offtopic"] = "Earth only answers questions about Mars and our mission. Ask something else!",

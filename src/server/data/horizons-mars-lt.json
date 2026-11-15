@@ -1,0 +1,1876 @@
+{
+	"header": {
+		"source": "NASA JPL Horizons",
+		"url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='499'&OBJ_DATA='NO'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&CENTER='500%40399'&START_TIME='2026-11-08'&STOP_TIME='2027-11-15'&STEP_SIZE='1%20d'&QUANTITIES='20%2C21'",
+		"credit": "NASA JPL Solar System Dynamics",
+		"notes": "Mars (499) seen from Earth's centre. distanceAu = delta (au); lightMinutes = 1-way_down_LT (minutes).",
+		"retrievedAt": "2026-11-15"
+	},
+	"rows": [
+		{
+			"date": "2026-11-08",
+			"distanceAu": 1.37489515010802,
+			"lightMinutes": 11.43465429
+		},
+		{
+			"date": "2026-11-09",
+			"distanceAu": 1.36653959137274,
+			"lightMinutes": 11.36516322
+		},
+		{
+			"date": "2026-11-10",
+			"distanceAu": 1.35815589285222,
+			"lightMinutes": 11.29543813
+		},
+		{
+			"date": "2026-11-11",
+			"distanceAu": 1.34974516595411,
+			"lightMinutes": 11.22548825
+		},
+		{
+			"date": "2026-11-12",
+			"distanceAu": 1.34130853082724,
+			"lightMinutes": 11.15532289
+		},
+		{
+			"date": "2026-11-13",
+			"distanceAu": 1.33284710891306,
+			"lightMinutes": 11.08495139
+		},
+		{
+			"date": "2026-11-14",
+			"distanceAu": 1.32436201800863,
+			"lightMinutes": 11.01438304
+		},
+		{
+			"date": "2026-11-15",
+			"distanceAu": 1.31585436923142,
+			"lightMinutes": 10.94362708
+		},
+		{
+			"date": "2026-11-16",
+			"distanceAu": 1.30732526492742,
+			"lightMinutes": 10.87269269
+		},
+		{
+			"date": "2026-11-17",
+			"distanceAu": 1.29877579638391,
+			"lightMinutes": 10.80158893
+		},
+		{
+			"date": "2026-11-18",
+			"distanceAu": 1.29020704020918,
+			"lightMinutes": 10.73032475
+		},
+		{
+			"date": "2026-11-19",
+			"distanceAu": 1.28162005244701,
+			"lightMinutes": 10.65890895
+		},
+		{
+			"date": "2026-11-20",
+			"distanceAu": 1.27301585999281,
+			"lightMinutes": 10.58735007
+		},
+		{
+			"date": "2026-11-21",
+			"distanceAu": 1.26439544982059,
+			"lightMinutes": 10.5156563
+		},
+		{
+			"date": "2026-11-22",
+			"distanceAu": 1.25575975804917,
+			"lightMinutes": 10.44383544
+		},
+		{
+			"date": "2026-11-23",
+			"distanceAu": 1.24710966282796,
+			"lightMinutes": 10.3718948
+		},
+		{
+			"date": "2026-11-24",
+			"distanceAu": 1.23844598662577,
+			"lightMinutes": 10.2998412
+		},
+		{
+			"date": "2026-11-25",
+			"distanceAu": 1.22976951324518,
+			"lightMinutes": 10.22768117
+		},
+		{
+			"date": "2026-11-26",
+			"distanceAu": 1.22108102134449,
+			"lightMinutes": 10.15542119
+		},
+		{
+			"date": "2026-11-27",
+			"distanceAu": 1.2123813299004,
+			"lightMinutes": 10.08306806
+		},
+		{
+			"date": "2026-11-28",
+			"distanceAu": 1.20367134522073,
+			"lightMinutes": 10.01062932
+		},
+		{
+			"date": "2026-11-29",
+			"distanceAu": 1.19495209795273,
+			"lightMinutes": 9.93811356
+		},
+		{
+			"date": "2026-11-30",
+			"distanceAu": 1.18622476304129,
+			"lightMinutes": 9.86553052
+		},
+		{
+			"date": "2026-12-01",
+			"distanceAu": 1.17749066251666,
+			"lightMinutes": 9.79289123
+		},
+		{
+			"date": "2026-12-02",
+			"distanceAu": 1.16875125602112,
+			"lightMinutes": 9.7202078
+		},
+		{
+			"date": "2026-12-03",
+			"distanceAu": 1.1600081253015,
+			"lightMinutes": 9.6474934
+		},
+		{
+			"date": "2026-12-04",
+			"distanceAu": 1.15126295748132,
+			"lightMinutes": 9.57476205
+		},
+		{
+			"date": "2026-12-05",
+			"distanceAu": 1.14251752967037,
+			"lightMinutes": 9.50202855
+		},
+		{
+			"date": "2026-12-06",
+			"distanceAu": 1.13377369564937,
+			"lightMinutes": 9.4293083
+		},
+		{
+			"date": "2026-12-07",
+			"distanceAu": 1.12503337438704,
+			"lightMinutes": 9.35661726
+		},
+		{
+			"date": "2026-12-08",
+			"distanceAu": 1.11629853987857,
+			"lightMinutes": 9.28397186
+		},
+		{
+			"date": "2026-12-09",
+			"distanceAu": 1.10757121194495,
+			"lightMinutes": 9.21138889
+		},
+		{
+			"date": "2026-12-10",
+			"distanceAu": 1.09885344791584,
+			"lightMinutes": 9.13888545
+		},
+		{
+			"date": "2026-12-11",
+			"distanceAu": 1.09014733533409,
+			"lightMinutes": 9.06647892
+		},
+		{
+			"date": "2026-12-12",
+			"distanceAu": 1.08145498585921,
+			"lightMinutes": 8.99418686
+		},
+		{
+			"date": "2026-12-13",
+			"distanceAu": 1.07277853039978,
+			"lightMinutes": 8.92202698
+		},
+		{
+			"date": "2026-12-14",
+			"distanceAu": 1.0641201152279,
+			"lightMinutes": 8.85001713
+		},
+		{
+			"date": "2026-12-15",
+			"distanceAu": 1.05548189852062,
+			"lightMinutes": 8.77817528
+		},
+		{
+			"date": "2026-12-16",
+			"distanceAu": 1.04686604653494,
+			"lightMinutes": 8.70651942
+		},
+		{
+			"date": "2026-12-17",
+			"distanceAu": 1.03827472855107,
+			"lightMinutes": 8.63506761
+		},
+		{
+			"date": "2026-12-18",
+			"distanceAu": 1.02971010991563,
+			"lightMinutes": 8.56383785
+		},
+		{
+			"date": "2026-12-19",
+			"distanceAu": 1.02117434312545,
+			"lightMinutes": 8.49284804
+		},
+		{
+			"date": "2026-12-20",
+			"distanceAu": 1.01266955807744,
+			"lightMinutes": 8.4221159
+		},
+		{
+			"date": "2026-12-21",
+			"distanceAu": 1.0041978544362,
+			"lightMinutes": 8.35165889
+		},
+		{
+			"date": "2026-12-22",
+			"distanceAu": 0.99576130116447,
+			"lightMinutes": 8.28149421
+		},
+		{
+			"date": "2026-12-23",
+			"distanceAu": 0.98736194941651,
+			"lightMinutes": 8.21163894
+		},
+		{
+			"date": "2026-12-24",
+			"distanceAu": 0.97900186328028,
+			"lightMinutes": 8.14211022
+		},
+		{
+			"date": "2026-12-25",
+			"distanceAu": 0.97068316706484,
+			"lightMinutes": 8.07292573
+		},
+		{
+			"date": "2026-12-26",
+			"distanceAu": 0.96240809981546,
+			"lightMinutes": 8.0041041
+		},
+		{
+			"date": "2026-12-27",
+			"distanceAu": 0.95417906268337,
+			"lightMinutes": 7.93566528
+		},
+		{
+			"date": "2026-12-28",
+			"distanceAu": 0.94599864707919,
+			"lightMinutes": 7.86763084
+		},
+		{
+			"date": "2026-12-29",
+			"distanceAu": 0.93786963995525,
+			"lightMinutes": 7.80002395
+		},
+		{
+			"date": "2026-12-30",
+			"distanceAu": 0.92979501112971,
+			"lightMinutes": 7.73286931
+		},
+		{
+			"date": "2026-12-31",
+			"distanceAu": 0.9217778914449,
+			"lightMinutes": 7.66619296
+		},
+		{
+			"date": "2027-01-01",
+			"distanceAu": 0.91382154950008,
+			"lightMinutes": 7.60002208
+		},
+		{
+			"date": "2027-01-02",
+			"distanceAu": 0.90592937138046,
+			"lightMinutes": 7.53438484
+		},
+		{
+			"date": "2027-01-03",
+			"distanceAu": 0.8981048446959,
+			"lightMinutes": 7.46931023
+		},
+		{
+			"date": "2027-01-04",
+			"distanceAu": 0.89035154635223,
+			"lightMinutes": 7.40482802
+		},
+		{
+			"date": "2027-01-05",
+			"distanceAu": 0.88267313274469,
+			"lightMinutes": 7.3409686
+		},
+		{
+			"date": "2027-01-06",
+			"distanceAu": 0.87507333106777,
+			"lightMinutes": 7.27776297
+		},
+		{
+			"date": "2027-01-07",
+			"distanceAu": 0.86755593079627,
+			"lightMinutes": 7.21524266
+		},
+		{
+			"date": "2027-01-08",
+			"distanceAu": 0.86012477485487,
+			"lightMinutes": 7.15343962
+		},
+		{
+			"date": "2027-01-09",
+			"distanceAu": 0.85278375040148,
+			"lightMinutes": 7.09238618
+		},
+		{
+			"date": "2027-01-10",
+			"distanceAu": 0.84553677940742,
+			"lightMinutes": 7.03211496
+		},
+		{
+			"date": "2027-01-11",
+			"distanceAu": 0.83838780928134,
+			"lightMinutes": 6.97265879
+		},
+		{
+			"date": "2027-01-12",
+			"distanceAu": 0.83134080366214,
+			"lightMinutes": 6.91405063
+		},
+		{
+			"date": "2027-01-13",
+			"distanceAu": 0.82439973327932,
+			"lightMinutes": 6.85632351
+		},
+		{
+			"date": "2027-01-14",
+			"distanceAu": 0.81756856657538,
+			"lightMinutes": 6.79951043
+		},
+		{
+			"date": "2027-01-15",
+			"distanceAu": 0.81085125976218,
+			"lightMinutes": 6.74364429
+		},
+		{
+			"date": "2027-01-16",
+			"distanceAu": 0.80425174630273,
+			"lightMinutes": 6.68875781
+		},
+		{
+			"date": "2027-01-17",
+			"distanceAu": 0.79777392660576,
+			"lightMinutes": 6.63488343
+		},
+		{
+			"date": "2027-01-18",
+			"distanceAu": 0.79142166003869,
+			"lightMinutes": 6.58205324
+		},
+		{
+			"date": "2027-01-19",
+			"distanceAu": 0.78519876297422,
+			"lightMinutes": 6.53029898
+		},
+		{
+			"date": "2027-01-20",
+			"distanceAu": 0.7791090177093,
+			"lightMinutes": 6.47965212
+		},
+		{
+			"date": "2027-01-21",
+			"distanceAu": 0.77315619630029,
+			"lightMinutes": 6.43014401
+		},
+		{
+			"date": "2027-01-22",
+			"distanceAu": 0.76734409925459,
+			"lightMinutes": 6.38180627
+		},
+		{
+			"date": "2027-01-23",
+			"distanceAu": 0.76167660202833,
+			"lightMinutes": 6.33467114
+		},
+		{
+			"date": "2027-01-24",
+			"distanceAu": 0.75615769604687,
+			"lightMinutes": 6.28877179
+		},
+		{
+			"date": "2027-01-25",
+			"distanceAu": 0.75079151055646,
+			"lightMinutes": 6.24414259
+		},
+		{
+			"date": "2027-01-26",
+			"distanceAu": 0.74558230858773,
+			"lightMinutes": 6.20081898
+		},
+		{
+			"date": "2027-01-27",
+			"distanceAu": 0.74053446024614,
+			"lightMinutes": 6.1588373
+		},
+		{
+			"date": "2027-01-28",
+			"distanceAu": 0.73565240304701,
+			"lightMinutes": 6.11823447
+		},
+		{
+			"date": "2027-01-29",
+			"distanceAu": 0.73094059946093,
+			"lightMinutes": 6.0790476
+		},
+		{
+			"date": "2027-01-30",
+			"distanceAu": 0.72640349826256,
+			"lightMinutes": 6.04131368
+		},
+		{
+			"date": "2027-01-31",
+			"distanceAu": 0.72204550205596,
+			"lightMinutes": 6.00506933
+		},
+		{
+			"date": "2027-02-01",
+			"distanceAu": 0.71787094045723,
+			"lightMinutes": 5.97035056
+		},
+		{
+			"date": "2027-02-02",
+			"distanceAu": 0.71388404714052,
+			"lightMinutes": 5.93719258
+		},
+		{
+			"date": "2027-02-03",
+			"distanceAu": 0.71008893879038,
+			"lightMinutes": 5.90562962
+		},
+		{
+			"date": "2027-02-04",
+			"distanceAu": 0.70648959439974,
+			"lightMinutes": 5.87569479
+		},
+		{
+			"date": "2027-02-05",
+			"distanceAu": 0.70308983395495,
+			"lightMinutes": 5.84741984
+		},
+		{
+			"date": "2027-02-06",
+			"distanceAu": 0.69989329618477,
+			"lightMinutes": 5.82083505
+		},
+		{
+			"date": "2027-02-07",
+			"distanceAu": 0.6969034156294,
+			"lightMinutes": 5.79596897
+		},
+		{
+			"date": "2027-02-08",
+			"distanceAu": 0.6941233997366,
+			"lightMinutes": 5.77284828
+		},
+		{
+			"date": "2027-02-09",
+			"distanceAu": 0.69155620694624,
+			"lightMinutes": 5.75149759
+		},
+		{
+			"date": "2027-02-10",
+			"distanceAu": 0.68920452674607,
+			"lightMinutes": 5.73193926
+		},
+		{
+			"date": "2027-02-11",
+			"distanceAu": 0.6870707625122,
+			"lightMinutes": 5.71419329
+		},
+		{
+			"date": "2027-02-12",
+			"distanceAu": 0.68515701772611,
+			"lightMinutes": 5.69827716
+		},
+		{
+			"date": "2027-02-13",
+			"distanceAu": 0.68346508607755,
+			"lightMinutes": 5.68420579
+		},
+		{
+			"date": "2027-02-14",
+			"distanceAu": 0.68199644617931,
+			"lightMinutes": 5.67199149
+		},
+		{
+			"date": "2027-02-15",
+			"distanceAu": 0.68075226216076,
+			"lightMinutes": 5.66164392
+		},
+		{
+			"date": "2027-02-16",
+			"distanceAu": 0.6797333920576,
+			"lightMinutes": 5.65317024
+		},
+		{
+			"date": "2027-02-17",
+			"distanceAu": 0.67894040614509,
+			"lightMinutes": 5.64657518
+		},
+		{
+			"date": "2027-02-18",
+			"distanceAu": 0.67837361636877,
+			"lightMinutes": 5.64186133
+		},
+		{
+			"date": "2027-02-19",
+			"distanceAu": 0.67803311515151,
+			"lightMinutes": 5.63902947
+		},
+		{
+			"date": "2027-02-20",
+			"distanceAu": 0.67791881744057,
+			"lightMinutes": 5.63807888
+		},
+		{
+			"date": "2027-02-21",
+			"distanceAu": 0.67803049600391,
+			"lightMinutes": 5.63900768
+		},
+		{
+			"date": "2027-02-22",
+			"distanceAu": 0.67836779983479,
+			"lightMinutes": 5.64181296
+		},
+		{
+			"date": "2027-02-23",
+			"distanceAu": 0.67893025060839,
+			"lightMinutes": 5.64649072
+		},
+		{
+			"date": "2027-02-24",
+			"distanceAu": 0.67971722013278,
+			"lightMinutes": 5.65303574
+		},
+		{
+			"date": "2027-02-25",
+			"distanceAu": 0.6807278978707,
+			"lightMinutes": 5.66144129
+		},
+		{
+			"date": "2027-02-26",
+			"distanceAu": 0.68196125875404,
+			"lightMinutes": 5.67169884
+		},
+		{
+			"date": "2027-02-27",
+			"distanceAu": 0.68341603839011,
+			"lightMinutes": 5.68379788
+		},
+		{
+			"date": "2027-02-28",
+			"distanceAu": 0.68509071829537,
+			"lightMinutes": 5.69772576
+		},
+		{
+			"date": "2027-03-01",
+			"distanceAu": 0.68698352036559,
+			"lightMinutes": 5.71346772
+		},
+		{
+			"date": "2027-03-02",
+			"distanceAu": 0.68909240813092,
+			"lightMinutes": 5.7310068
+		},
+		{
+			"date": "2027-03-03",
+			"distanceAu": 0.69141509206093,
+			"lightMinutes": 5.75032398
+		},
+		{
+			"date": "2027-03-04",
+			"distanceAu": 0.69394903662578,
+			"lightMinutes": 5.77139815
+		},
+		{
+			"date": "2027-03-05",
+			"distanceAu": 0.69669146752401,
+			"lightMinutes": 5.79420625
+		},
+		{
+			"date": "2027-03-06",
+			"distanceAu": 0.69963937824082,
+			"lightMinutes": 5.81872328
+		},
+		{
+			"date": "2027-03-07",
+			"distanceAu": 0.70278953584381,
+			"lightMinutes": 5.84492234
+		},
+		{
+			"date": "2027-03-08",
+			"distanceAu": 0.70613848662426,
+			"lightMinutes": 5.87277471
+		},
+		{
+			"date": "2027-03-09",
+			"distanceAu": 0.70968256278036,
+			"lightMinutes": 5.9022499
+		},
+		{
+			"date": "2027-03-10",
+			"distanceAu": 0.71341789168339,
+			"lightMinutes": 5.93331568
+		},
+		{
+			"date": "2027-03-11",
+			"distanceAu": 0.71734040923753,
+			"lightMinutes": 5.96593826
+		},
+		{
+			"date": "2027-03-12",
+			"distanceAu": 0.72144587840768,
+			"lightMinutes": 6.00008241
+		},
+		{
+			"date": "2027-03-13",
+			"distanceAu": 0.72572991328957,
+			"lightMinutes": 6.03571164
+		},
+		{
+			"date": "2027-03-14",
+			"distanceAu": 0.73018800840598,
+			"lightMinutes": 6.07278849
+		},
+		{
+			"date": "2027-03-15",
+			"distanceAu": 0.7348155724767,
+			"lightMinutes": 6.11127477
+		},
+		{
+			"date": "2027-03-16",
+			"distanceAu": 0.73960796576374,
+			"lightMinutes": 6.15113188
+		},
+		{
+			"date": "2027-03-17",
+			"distanceAu": 0.74456053999633,
+			"lightMinutes": 6.19232119
+		},
+		{
+			"date": "2027-03-18",
+			"distanceAu": 0.74966867943375,
+			"lightMinutes": 6.23480429
+		},
+		{
+			"date": "2027-03-19",
+			"distanceAu": 0.75492784055429,
+			"lightMinutes": 6.2785434
+		},
+		{
+			"date": "2027-03-20",
+			"distanceAu": 0.76033358637293,
+			"lightMinutes": 6.32350162
+		},
+		{
+			"date": "2027-03-21",
+			"distanceAu": 0.76588161036646,
+			"lightMinutes": 6.36964312
+		},
+		{
+			"date": "2027-03-22",
+			"distanceAu": 0.77156774563146,
+			"lightMinutes": 6.41693327
+		},
+		{
+			"date": "2027-03-23",
+			"distanceAu": 0.77738795781751,
+			"lightMinutes": 6.4653385
+		},
+		{
+			"date": "2027-03-24",
+			"distanceAu": 0.78333832466156,
+			"lightMinutes": 6.51482619
+		},
+		{
+			"date": "2027-03-25",
+			"distanceAu": 0.78941500845979,
+			"lightMinutes": 6.56536443
+		},
+		{
+			"date": "2027-03-26",
+			"distanceAu": 0.79561422872406,
+			"lightMinutes": 6.61692177
+		},
+		{
+			"date": "2027-03-27",
+			"distanceAu": 0.80193224045034,
+			"lightMinutes": 6.66946707
+		},
+		{
+			"date": "2027-03-28",
+			"distanceAu": 0.80836532028886,
+			"lightMinutes": 6.72296937
+		},
+		{
+			"date": "2027-03-29",
+			"distanceAu": 0.81490976010604,
+			"lightMinutes": 6.77739781
+		},
+		{
+			"date": "2027-03-30",
+			"distanceAu": 0.82156186582288,
+			"lightMinutes": 6.83272169
+		},
+		{
+			"date": "2027-03-31",
+			"distanceAu": 0.82831795898357,
+			"lightMinutes": 6.8889104
+		},
+		{
+			"date": "2027-04-01",
+			"distanceAu": 0.83517437880899,
+			"lightMinutes": 6.94593351
+		},
+		{
+			"date": "2027-04-02",
+			"distanceAu": 0.84212748310617,
+			"lightMinutes": 7.00376071
+		},
+		{
+			"date": "2027-04-03",
+			"distanceAu": 0.84917364710709,
+			"lightMinutes": 7.06236187
+		},
+		{
+			"date": "2027-04-04",
+			"distanceAu": 0.85630926004283,
+			"lightMinutes": 7.12170695
+		},
+		{
+			"date": "2027-04-05",
+			"distanceAu": 0.86353072004785,
+			"lightMinutes": 7.181766
+		},
+		{
+			"date": "2027-04-06",
+			"distanceAu": 0.87083442882558,
+			"lightMinutes": 7.2425091
+		},
+		{
+			"date": "2027-04-07",
+			"distanceAu": 0.87821678826165,
+			"lightMinutes": 7.30390631
+		},
+		{
+			"date": "2027-04-08",
+			"distanceAu": 0.88567420155925,
+			"lightMinutes": 7.36592772
+		},
+		{
+			"date": "2027-04-09",
+			"distanceAu": 0.89320308115196,
+			"lightMinutes": 7.42854351
+		},
+		{
+			"date": "2027-04-10",
+			"distanceAu": 0.90079986446225,
+			"lightMinutes": 7.49172403
+		},
+		{
+			"date": "2027-04-11",
+			"distanceAu": 0.90846103678072,
+			"lightMinutes": 7.55544005
+		},
+		{
+			"date": "2027-04-12",
+			"distanceAu": 0.91618315880799,
+			"lightMinutes": 7.61966299
+		},
+		{
+			"date": "2027-04-13",
+			"distanceAu": 0.9239628954301,
+			"lightMinutes": 7.68436508
+		},
+		{
+			"date": "2027-04-14",
+			"distanceAu": 0.93179704235976,
+			"lightMinutes": 7.7495197
+		},
+		{
+			"date": "2027-04-15",
+			"distanceAu": 0.93968254804828,
+			"lightMinutes": 7.81510145
+		},
+		{
+			"date": "2027-04-16",
+			"distanceAu": 0.9476165291553,
+			"lightMinutes": 7.88108635
+		},
+		{
+			"date": "2027-04-17",
+			"distanceAu": 0.9555962784403,
+			"lightMinutes": 7.94745191
+		},
+		{
+			"date": "2027-04-18",
+			"distanceAu": 0.96361926425162,
+			"lightMinutes": 8.01417704
+		},
+		{
+			"date": "2027-04-19",
+			"distanceAu": 0.97168312122325,
+			"lightMinutes": 8.0812421
+		},
+		{
+			"date": "2027-04-20",
+			"distanceAu": 0.97978563271174,
+			"lightMinutes": 8.14862863
+		},
+		{
+			"date": "2027-04-21",
+			"distanceAu": 0.98792470688134,
+			"lightMinutes": 8.21631925
+		},
+		{
+			"date": "2027-04-22",
+			"distanceAu": 0.99609834965648,
+			"lightMinutes": 8.28429736
+		},
+		{
+			"date": "2027-04-23",
+			"distanceAu": 1.00430463832195,
+			"lightMinutes": 8.35254698
+		},
+		{
+			"date": "2027-04-24",
+			"distanceAu": 1.01254169900933,
+			"lightMinutes": 8.42105253
+		},
+		{
+			"date": "2027-04-25",
+			"distanceAu": 1.02080768990549,
+			"lightMinutes": 8.48979868
+		},
+		{
+			"date": "2027-04-26",
+			"distanceAu": 1.02910079038175,
+			"lightMinutes": 8.55877029
+		},
+		{
+			"date": "2027-04-27",
+			"distanceAu": 1.03741919495924,
+			"lightMinutes": 8.62795235
+		},
+		{
+			"date": "2027-04-28",
+			"distanceAu": 1.04576111036045,
+			"lightMinutes": 8.69732995
+		},
+		{
+			"date": "2027-04-29",
+			"distanceAu": 1.05412475378809,
+			"lightMinutes": 8.76688825
+		},
+		{
+			"date": "2027-04-30",
+			"distanceAu": 1.06250835082512,
+			"lightMinutes": 8.8366125
+		},
+		{
+			"date": "2027-05-01",
+			"distanceAu": 1.07091013178923,
+			"lightMinutes": 8.90648798
+		},
+		{
+			"date": "2027-05-02",
+			"distanceAu": 1.07932832593363,
+			"lightMinutes": 8.97649997
+		},
+		{
+			"date": "2027-05-03",
+			"distanceAu": 1.08776115359526,
+			"lightMinutes": 9.04663366
+		},
+		{
+			"date": "2027-05-04",
+			"distanceAu": 1.09620681731086,
+			"lightMinutes": 9.1168741
+		},
+		{
+			"date": "2027-05-05",
+			"distanceAu": 1.10466349403338,
+			"lightMinutes": 9.18720613
+		},
+		{
+			"date": "2027-05-06",
+			"distanceAu": 1.11312933162578,
+			"lightMinutes": 9.25761436
+		},
+		{
+			"date": "2027-05-07",
+			"distanceAu": 1.12160245321369,
+			"lightMinutes": 9.32808316
+		},
+		{
+			"date": "2027-05-08",
+			"distanceAu": 1.13008097203908,
+			"lightMinutes": 9.39859685
+		},
+		{
+			"date": "2027-05-09",
+			"distanceAu": 1.13856301689707,
+			"lightMinutes": 9.46913987
+		},
+		{
+			"date": "2027-05-10",
+			"distanceAu": 1.14704676479598,
+			"lightMinutes": 9.53969705
+		},
+		{
+			"date": "2027-05-11",
+			"distanceAu": 1.15553047481745,
+			"lightMinutes": 9.61025391
+		},
+		{
+			"date": "2027-05-12",
+			"distanceAu": 1.16401251676707,
+			"lightMinutes": 9.68079691
+		},
+		{
+			"date": "2027-05-13",
+			"distanceAu": 1.17249139021518,
+			"lightMinutes": 9.75131355
+		},
+		{
+			"date": "2027-05-14",
+			"distanceAu": 1.18096573260747,
+			"lightMinutes": 9.8217925
+		},
+		{
+			"date": "2027-05-15",
+			"distanceAu": 1.18943431764276,
+			"lightMinutes": 9.89222358
+		},
+		{
+			"date": "2027-05-16",
+			"distanceAu": 1.19789604626058,
+			"lightMinutes": 9.96259763
+		},
+		{
+			"date": "2027-05-17",
+			"distanceAu": 1.20634993256121,
+			"lightMinutes": 10.03290646
+		},
+		{
+			"date": "2027-05-18",
+			"distanceAu": 1.21479508647743,
+			"lightMinutes": 10.10314266
+		},
+		{
+			"date": "2027-05-19",
+			"distanceAu": 1.22323069460802,
+			"lightMinutes": 10.17329947
+		},
+		{
+			"date": "2027-05-20",
+			"distanceAu": 1.23165600051014,
+			"lightMinutes": 10.2433706
+		},
+		{
+			"date": "2027-05-21",
+			"distanceAu": 1.24007028580486,
+			"lightMinutes": 10.31335008
+		},
+		{
+			"date": "2027-05-22",
+			"distanceAu": 1.24847285342194,
+			"lightMinutes": 10.38323211
+		},
+		{
+			"date": "2027-05-23",
+			"distanceAu": 1.25686301401369,
+			"lightMinutes": 10.45301094
+		},
+		{
+			"date": "2027-05-24",
+			"distanceAu": 1.26524007601015,
+			"lightMinutes": 10.52268084
+		},
+		{
+			"date": "2027-05-25",
+			"distanceAu": 1.27360333912268,
+			"lightMinutes": 10.59223598
+		},
+		{
+			"date": "2027-05-26",
+			"distanceAu": 1.28195209052486,
+			"lightMinutes": 10.66167043
+		},
+		{
+			"date": "2027-05-27",
+			"distanceAu": 1.290285602575,
+			"lightMinutes": 10.73097814
+		},
+		{
+			"date": "2027-05-28",
+			"distanceAu": 1.29860313081869,
+			"lightMinutes": 10.80015291
+		},
+		{
+			"date": "2027-05-29",
+			"distanceAu": 1.30690391109473,
+			"lightMinutes": 10.86918839
+		},
+		{
+			"date": "2027-05-30",
+			"distanceAu": 1.31518715483478,
+			"lightMinutes": 10.93807803
+		},
+		{
+			"date": "2027-05-31",
+			"distanceAu": 1.32345204212242,
+			"lightMinutes": 11.006815
+		},
+		{
+			"date": "2027-06-01",
+			"distanceAu": 1.3316977128473,
+			"lightMinutes": 11.07539216
+		},
+		{
+			"date": "2027-06-02",
+			"distanceAu": 1.33992325744508,
+			"lightMinutes": 11.14380192
+		},
+		{
+			"date": "2027-06-03",
+			"distanceAu": 1.34812771019088,
+			"lightMinutes": 11.21203628
+		},
+		{
+			"date": "2027-06-04",
+			"distanceAu": 1.35631004934492,
+			"lightMinutes": 11.28008672
+		},
+		{
+			"date": "2027-06-05",
+			"distanceAu": 1.36446920863931,
+			"lightMinutes": 11.34794438
+		},
+		{
+			"date": "2027-06-06",
+			"distanceAu": 1.3726041025136,
+			"lightMinutes": 11.41560022
+		},
+		{
+			"date": "2027-06-07",
+			"distanceAu": 1.38071366299773,
+			"lightMinutes": 11.48304538
+		},
+		{
+			"date": "2027-06-08",
+			"distanceAu": 1.3887968810482,
+			"lightMinutes": 11.55027146
+		},
+		{
+			"date": "2027-06-09",
+			"distanceAu": 1.39685284261951,
+			"lightMinutes": 11.61727085
+		},
+		{
+			"date": "2027-06-10",
+			"distanceAu": 1.4048807516964,
+			"lightMinutes": 11.68403693
+		},
+		{
+			"date": "2027-06-11",
+			"distanceAu": 1.41287993765174,
+			"lightMinutes": 11.75056413
+		},
+		{
+			"date": "2027-06-12",
+			"distanceAu": 1.4208498493488,
+			"lightMinutes": 11.81684787
+		},
+		{
+			"date": "2027-06-13",
+			"distanceAu": 1.42879004094375,
+			"lightMinutes": 11.88288443
+		},
+		{
+			"date": "2027-06-14",
+			"distanceAu": 1.43670015418333,
+			"lightMinutes": 11.94867083
+		},
+		{
+			"date": "2027-06-15",
+			"distanceAu": 1.44457990041193,
+			"lightMinutes": 12.01420468
+		},
+		{
+			"date": "2027-06-16",
+			"distanceAu": 1.45242904381505,
+			"lightMinutes": 12.07948402
+		},
+		{
+			"date": "2027-06-17",
+			"distanceAu": 1.46024738631168,
+			"lightMinutes": 12.14450719
+		},
+		{
+			"date": "2027-06-18",
+			"distanceAu": 1.46803475404637,
+			"lightMinutes": 12.20927275
+		},
+		{
+			"date": "2027-06-19",
+			"distanceAu": 1.4757909854094,
+			"lightMinutes": 12.27377936
+		},
+		{
+			"date": "2027-06-20",
+			"distanceAu": 1.48351592065302,
+			"lightMinutes": 12.33802569
+		},
+		{
+			"date": "2027-06-21",
+			"distanceAu": 1.49120939325921,
+			"lightMinutes": 12.40201035
+		},
+		{
+			"date": "2027-06-22",
+			"distanceAu": 1.49887122315329,
+			"lightMinutes": 12.46573185
+		},
+		{
+			"date": "2027-06-23",
+			"distanceAu": 1.50650121164832,
+			"lightMinutes": 12.52918852
+		},
+		{
+			"date": "2027-06-24",
+			"distanceAu": 1.51409913772206,
+			"lightMinutes": 12.59237855
+		},
+		{
+			"date": "2027-06-25",
+			"distanceAu": 1.52166475495647,
+			"lightMinutes": 12.65529987
+		},
+		{
+			"date": "2027-06-26",
+			"distanceAu": 1.52919778828801,
+			"lightMinutes": 12.7179502
+		},
+		{
+			"date": "2027-06-27",
+			"distanceAu": 1.53669792968149,
+			"lightMinutes": 12.78032697
+		},
+		{
+			"date": "2027-06-28",
+			"distanceAu": 1.54416483201074,
+			"lightMinutes": 12.8424273
+		},
+		{
+			"date": "2027-06-29",
+			"distanceAu": 1.55159810089706,
+			"lightMinutes": 12.90424792
+		},
+		{
+			"date": "2027-06-30",
+			"distanceAu": 1.55899728515172,
+			"lightMinutes": 12.96578505
+		},
+		{
+			"date": "2027-07-01",
+			"distanceAu": 1.56636186788252,
+			"lightMinutes": 13.02703442
+		},
+		{
+			"date": "2027-07-02",
+			"distanceAu": 1.57369126208717,
+			"lightMinutes": 13.08799113
+		},
+		{
+			"date": "2027-07-03",
+			"distanceAu": 1.58098481590523,
+			"lightMinutes": 13.14864977
+		},
+		{
+			"date": "2027-07-04",
+			"distanceAu": 1.58824183220469,
+			"lightMinutes": 13.20900454
+		},
+		{
+			"date": "2027-07-05",
+			"distanceAu": 1.59546160351035,
+			"lightMinutes": 13.26904954
+		},
+		{
+			"date": "2027-07-06",
+			"distanceAu": 1.60264345696043,
+			"lightMinutes": 13.3287792
+		},
+		{
+			"date": "2027-07-07",
+			"distanceAu": 1.60978679838529,
+			"lightMinutes": 13.38818856
+		},
+		{
+			"date": "2027-07-08",
+			"distanceAu": 1.61689114393924,
+			"lightMinutes": 13.4472736
+		},
+		{
+			"date": "2027-07-09",
+			"distanceAu": 1.62395613292444,
+			"lightMinutes": 13.50603132
+		},
+		{
+			"date": "2027-07-10",
+			"distanceAu": 1.63098152292294,
+			"lightMinutes": 13.5644597
+		},
+		{
+			"date": "2027-07-11",
+			"distanceAu": 1.63796717344148,
+			"lightMinutes": 13.62255759
+		},
+		{
+			"date": "2027-07-12",
+			"distanceAu": 1.64491302516451,
+			"lightMinutes": 13.68032448
+		},
+		{
+			"date": "2027-07-13",
+			"distanceAu": 1.65181907991401,
+			"lightMinutes": 13.73776038
+		},
+		{
+			"date": "2027-07-14",
+			"distanceAu": 1.65868538371732,
+			"lightMinutes": 13.79486569
+		},
+		{
+			"date": "2027-07-15",
+			"distanceAu": 1.66551201335104,
+			"lightMinutes": 13.85164104
+		},
+		{
+			"date": "2027-07-16",
+			"distanceAu": 1.67229906569148,
+			"lightMinutes": 13.90808723
+		},
+		{
+			"date": "2027-07-17",
+			"distanceAu": 1.67904664893737,
+			"lightMinutes": 13.96420517
+		},
+		{
+			"date": "2027-07-18",
+			"distanceAu": 1.68575487493914,
+			"lightMinutes": 14.01999578
+		},
+		{
+			"date": "2027-07-19",
+			"distanceAu": 1.69242385219149,
+			"lightMinutes": 14.07545998
+		},
+		{
+			"date": "2027-07-20",
+			"distanceAu": 1.69905367934419,
+			"lightMinutes": 14.13059857
+		},
+		{
+			"date": "2027-07-21",
+			"distanceAu": 1.70564443925664,
+			"lightMinutes": 14.18541225
+		},
+		{
+			"date": "2027-07-22",
+			"distanceAu": 1.71219619363391,
+			"lightMinutes": 14.23990152
+		},
+		{
+			"date": "2027-07-23",
+			"distanceAu": 1.71870897814959,
+			"lightMinutes": 14.2940667
+		},
+		{
+			"date": "2027-07-24",
+			"distanceAu": 1.72518279774712,
+			"lightMinutes": 14.34790782
+		},
+		{
+			"date": "2027-07-25",
+			"distanceAu": 1.73161762160581,
+			"lightMinutes": 14.40142462
+		},
+		{
+			"date": "2027-07-26",
+			"distanceAu": 1.73801337716801,
+			"lightMinutes": 14.45461649
+		},
+		{
+			"date": "2027-07-27",
+			"distanceAu": 1.74436994276592,
+			"lightMinutes": 14.50748244
+		},
+		{
+			"date": "2027-07-28",
+			"distanceAu": 1.75068713889993,
+			"lightMinutes": 14.56002096
+		},
+		{
+			"date": "2027-07-29",
+			"distanceAu": 1.75696471924125,
+			"lightMinutes": 14.61223
+		},
+		{
+			"date": "2027-07-30",
+			"distanceAu": 1.76320236398258,
+			"lightMinutes": 14.66410691
+		},
+		{
+			"date": "2027-07-31",
+			"distanceAu": 1.76939967987903,
+			"lightMinutes": 14.71564841
+		},
+		{
+			"date": "2027-08-01",
+			"distanceAu": 1.77555621215586,
+			"lightMinutes": 14.76685073
+		},
+		{
+			"date": "2027-08-02",
+			"distanceAu": 1.78167147182067,
+			"lightMinutes": 14.81770979
+		},
+		{
+			"date": "2027-08-03",
+			"distanceAu": 1.78774497688857,
+			"lightMinutes": 14.8682216
+		},
+		{
+			"date": "2027-08-04",
+			"distanceAu": 1.79377629924959,
+			"lightMinutes": 14.91838257
+		},
+		{
+			"date": "2027-08-05",
+			"distanceAu": 1.79976510472469,
+			"lightMinutes": 14.96818995
+		},
+		{
+			"date": "2027-08-06",
+			"distanceAu": 1.80571117593917,
+			"lightMinutes": 15.01764192
+		},
+		{
+			"date": "2027-08-07",
+			"distanceAu": 1.81161441495653,
+			"lightMinutes": 15.06673766
+		},
+		{
+			"date": "2027-08-08",
+			"distanceAu": 1.81747483012016,
+			"lightMinutes": 15.11547725
+		},
+		{
+			"date": "2027-08-09",
+			"distanceAu": 1.82329251502603,
+			"lightMinutes": 15.16386146
+		},
+		{
+			"date": "2027-08-10",
+			"distanceAu": 1.82906762667636,
+			"lightMinutes": 15.21189159
+		},
+		{
+			"date": "2027-08-11",
+			"distanceAu": 1.83480036691004,
+			"lightMinutes": 15.25956934
+		},
+		{
+			"date": "2027-08-12",
+			"distanceAu": 1.84049096837286,
+			"lightMinutes": 15.30689663
+		},
+		{
+			"date": "2027-08-13",
+			"distanceAu": 1.84613968452135,
+			"lightMinutes": 15.35387557
+		},
+		{
+			"date": "2027-08-14",
+			"distanceAu": 1.85174678241989,
+			"lightMinutes": 15.40050838
+		},
+		{
+			"date": "2027-08-15",
+			"distanceAu": 1.85731253702308,
+			"lightMinutes": 15.44679735
+		},
+		{
+			"date": "2027-08-16",
+			"distanceAu": 1.86283722589658,
+			"lightMinutes": 15.49274479
+		},
+		{
+			"date": "2027-08-17",
+			"distanceAu": 1.86832112370756,
+			"lightMinutes": 15.53835297
+		},
+		{
+			"date": "2027-08-18",
+			"distanceAu": 1.87376449619253,
+			"lightMinutes": 15.58362412
+		},
+		{
+			"date": "2027-08-19",
+			"distanceAu": 1.87916759361305,
+			"lightMinutes": 15.62856031
+		},
+		{
+			"date": "2027-08-20",
+			"distanceAu": 1.88453064388347,
+			"lightMinutes": 15.67316344
+		},
+		{
+			"date": "2027-08-21",
+			"distanceAu": 1.88985384557511,
+			"lightMinutes": 15.71743516
+		},
+		{
+			"date": "2027-08-22",
+			"distanceAu": 1.89513736088525,
+			"lightMinutes": 15.76137682
+		},
+		{
+			"date": "2027-08-23",
+			"distanceAu": 1.9003813084872,
+			"lightMinutes": 15.8049894
+		},
+		{
+			"date": "2027-08-24",
+			"distanceAu": 1.90558575607837,
+			"lightMinutes": 15.84827347
+		},
+		{
+			"date": "2027-08-25",
+			"distanceAu": 1.91075071257531,
+			"lightMinutes": 15.8912291
+		},
+		{
+			"date": "2027-08-26",
+			"distanceAu": 1.91587612042575,
+			"lightMinutes": 15.93385582
+		},
+		{
+			"date": "2027-08-27",
+			"distanceAu": 1.9209618495069,
+			"lightMinutes": 15.97615254
+		},
+		{
+			"date": "2027-08-28",
+			"distanceAu": 1.92600769543466,
+			"lightMinutes": 16.01811756
+		},
+		{
+			"date": "2027-08-29",
+			"distanceAu": 1.93101338626111,
+			"lightMinutes": 16.05974862
+		},
+		{
+			"date": "2027-08-30",
+			"distanceAu": 1.9359786013829,
+			"lightMinutes": 16.10104306
+		},
+		{
+			"date": "2027-08-31",
+			"distanceAu": 1.94090300383582,
+			"lightMinutes": 16.14199806
+		},
+		{
+			"date": "2027-09-01",
+			"distanceAu": 1.94578628201562,
+			"lightMinutes": 16.18261105
+		},
+		{
+			"date": "2027-09-02",
+			"distanceAu": 1.95062819160337,
+			"lightMinutes": 16.22287998
+		},
+		{
+			"date": "2027-09-03",
+			"distanceAu": 1.95542858684861,
+			"lightMinutes": 16.26280365
+		},
+		{
+			"date": "2027-09-04",
+			"distanceAu": 1.96018743420874,
+			"lightMinutes": 16.30238178
+		},
+		{
+			"date": "2027-09-05",
+			"distanceAu": 1.96490480832892,
+			"lightMinutes": 16.34161499
+		},
+		{
+			"date": "2027-09-06",
+			"distanceAu": 1.96958087600723,
+			"lightMinutes": 16.38050465
+		},
+		{
+			"date": "2027-09-07",
+			"distanceAu": 1.97421587550459,
+			"lightMinutes": 16.41905277
+		},
+		{
+			"date": "2027-09-08",
+			"distanceAu": 1.97881009694331,
+			"lightMinutes": 16.45726174
+		},
+		{
+			"date": "2027-09-09",
+			"distanceAu": 1.98336386672621,
+			"lightMinutes": 16.49513429
+		},
+		{
+			"date": "2027-09-10",
+			"distanceAu": 1.98787753653865,
+			"lightMinutes": 16.53267334
+		},
+		{
+			"date": "2027-09-11",
+			"distanceAu": 1.99235147611429,
+			"lightMinutes": 16.56988196
+		},
+		{
+			"date": "2027-09-12",
+			"distanceAu": 1.99678606840174,
+			"lightMinutes": 16.60676334
+		},
+		{
+			"date": "2027-09-13",
+			"distanceAu": 2.00118170572771,
+			"lightMinutes": 16.64332074
+		},
+		{
+			"date": "2027-09-14",
+			"distanceAu": 2.00553878575903,
+			"lightMinutes": 16.67955747
+		},
+		{
+			"date": "2027-09-15",
+			"distanceAu": 2.00985770638857,
+			"lightMinutes": 16.71547684
+		},
+		{
+			"date": "2027-09-16",
+			"distanceAu": 2.01413885906131,
+			"lightMinutes": 16.7510821
+		},
+		{
+			"date": "2027-09-17",
+			"distanceAu": 2.01838262047933,
+			"lightMinutes": 16.78637639
+		},
+		{
+			"date": "2027-09-18",
+			"distanceAu": 2.02258934301793,
+			"lightMinutes": 16.82136263
+		},
+		{
+			"date": "2027-09-19",
+			"distanceAu": 2.02675934446505,
+			"lightMinutes": 16.85604348
+		},
+		{
+			"date": "2027-09-20",
+			"distanceAu": 2.03089289780077,
+			"lightMinutes": 16.89042119
+		},
+		{
+			"date": "2027-09-21",
+			"distanceAu": 2.03499022166821,
+			"lightMinutes": 16.92449759
+		},
+		{
+			"date": "2027-09-22",
+			"distanceAu": 2.03905147205997,
+			"lightMinutes": 16.95827398
+		},
+		{
+			"date": "2027-09-23",
+			"distanceAu": 2.0430767357317,
+			"lightMinutes": 16.99175108
+		},
+		{
+			"date": "2027-09-24",
+			"distanceAu": 2.04706602612828,
+			"lightMinutes": 17.024929
+		},
+		{
+			"date": "2027-09-25",
+			"distanceAu": 2.05101928321045,
+			"lightMinutes": 17.05780723
+		},
+		{
+			"date": "2027-09-26",
+			"distanceAu": 2.05493637928352,
+			"lightMinutes": 17.09038473
+		},
+		{
+			"date": "2027-09-27",
+			"distanceAu": 2.05881713318964,
+			"lightMinutes": 17.12265998
+		},
+		{
+			"date": "2027-09-28",
+			"distanceAu": 2.06266133426318,
+			"lightMinutes": 17.15463122
+		},
+		{
+			"date": "2027-09-29",
+			"distanceAu": 2.06646877482132,
+			"lightMinutes": 17.18629674
+		},
+		{
+			"date": "2027-09-30",
+			"distanceAu": 2.07023928632755,
+			"lightMinutes": 17.21765513
+		},
+		{
+			"date": "2027-10-01",
+			"distanceAu": 2.07397277168895,
+			"lightMinutes": 17.24870558
+		},
+		{
+			"date": "2027-10-02",
+			"distanceAu": 2.07766922651151,
+			"lightMinutes": 17.27944805
+		},
+		{
+			"date": "2027-10-03",
+			"distanceAu": 2.08132874581836,
+			"lightMinutes": 17.30988335
+		},
+		{
+			"date": "2027-10-04",
+			"distanceAu": 2.08495151765292,
+			"lightMinutes": 17.34001302
+		},
+		{
+			"date": "2027-10-05",
+			"distanceAu": 2.08853780842139,
+			"lightMinutes": 17.36983929
+		},
+		{
+			"date": "2027-10-06",
+			"distanceAu": 2.09208794553366,
+			"lightMinutes": 17.39936488
+		},
+		{
+			"date": "2027-10-07",
+			"distanceAu": 2.09560230152007,
+			"lightMinutes": 17.42859289
+		},
+		{
+			"date": "2027-10-08",
+			"distanceAu": 2.09908128172764,
+			"lightMinutes": 17.45752669
+		},
+		{
+			"date": "2027-10-09",
+			"distanceAu": 2.10252531595265,
+			"lightMinutes": 17.48616985
+		},
+		{
+			"date": "2027-10-10",
+			"distanceAu": 2.10593485329041,
+			"lightMinutes": 17.5145261
+		},
+		{
+			"date": "2027-10-11",
+			"distanceAu": 2.10931035897279,
+			"lightMinutes": 17.54259933
+		},
+		{
+			"date": "2027-10-12",
+			"distanceAu": 2.11265231180452,
+			"lightMinutes": 17.5703935
+		},
+		{
+			"date": "2027-10-13",
+			"distanceAu": 2.11596120083776,
+			"lightMinutes": 17.59791269
+		},
+		{
+			"date": "2027-10-14",
+			"distanceAu": 2.11923752009743,
+			"lightMinutes": 17.62516101
+		},
+		{
+			"date": "2027-10-15",
+			"distanceAu": 2.12248176051761,
+			"lightMinutes": 17.65214254
+		},
+		{
+			"date": "2027-10-16",
+			"distanceAu": 2.12569439881766,
+			"lightMinutes": 17.67886123
+		},
+		{
+			"date": "2027-10-17",
+			"distanceAu": 2.12887588380185,
+			"lightMinutes": 17.70532084
+		},
+		{
+			"date": "2027-10-18",
+			"distanceAu": 2.13202662135481,
+			"lightMinutes": 17.73152472
+		},
+		{
+			"date": "2027-10-19",
+			"distanceAu": 2.13514695997397,
+			"lightMinutes": 17.75747579
+		},
+		{
+			"date": "2027-10-20",
+			"distanceAu": 2.13823717880554,
+			"lightMinutes": 17.78317635
+		},
+		{
+			"date": "2027-10-21",
+			"distanceAu": 2.1412974797985,
+			"lightMinutes": 17.8086281
+		},
+		{
+			"date": "2027-10-22",
+			"distanceAu": 2.14432798496682,
+			"lightMinutes": 17.83383204
+		},
+		{
+			"date": "2027-10-23",
+			"distanceAu": 2.14732873919477,
+			"lightMinutes": 17.85878856
+		},
+		{
+			"date": "2027-10-24",
+			"distanceAu": 2.15029971875387,
+			"lightMinutes": 17.88349744
+		},
+		{
+			"date": "2027-10-25",
+			"distanceAu": 2.1532408456514,
+			"lightMinutes": 17.90795805
+		},
+		{
+			"date": "2027-10-26",
+			"distanceAu": 2.15615200773879,
+			"lightMinutes": 17.93216944
+		},
+		{
+			"date": "2027-10-27",
+			"distanceAu": 2.15903308376659,
+			"lightMinutes": 17.95613062
+		},
+		{
+			"date": "2027-10-28",
+			"distanceAu": 2.16188397119773,
+			"lightMinutes": 17.97984073
+		},
+		{
+			"date": "2027-10-29",
+			"distanceAu": 2.16470461308803,
+			"lightMinutes": 18.00329929
+		},
+		{
+			"date": "2027-10-30",
+			"distanceAu": 2.16749501966001,
+			"lightMinutes": 18.0265064
+		},
+		{
+			"date": "2027-10-31",
+			"distanceAu": 2.17025528107687,
+			"lightMinutes": 18.04946279
+		},
+		{
+			"date": "2027-11-01",
+			"distanceAu": 2.17298557021496,
+			"lightMinutes": 18.07216991
+		},
+		{
+			"date": "2027-11-02",
+			"distanceAu": 2.17568613687436,
+			"lightMinutes": 18.09462984
+		},
+		{
+			"date": "2027-11-03",
+			"distanceAu": 2.17835729664579,
+			"lightMinutes": 18.1168452
+		},
+		{
+			"date": "2027-11-04",
+			"distanceAu": 2.18099941802011,
+			"lightMinutes": 18.13881905
+		},
+		{
+			"date": "2027-11-05",
+			"distanceAu": 2.18361291056122,
+			"lightMinutes": 18.16055481
+		},
+		{
+			"date": "2027-11-06",
+			"distanceAu": 2.18619821572349,
+			"lightMinutes": 18.18205613
+		},
+		{
+			"date": "2027-11-07",
+			"distanceAu": 2.18875580073282,
+			"lightMinutes": 18.20332692
+		},
+		{
+			"date": "2027-11-08",
+			"distanceAu": 2.19128615510435,
+			"lightMinutes": 18.22437124
+		},
+		{
+			"date": "2027-11-09",
+			"distanceAu": 2.19378978882407,
+			"lightMinutes": 18.24519332
+		},
+		{
+			"date": "2027-11-10",
+			"distanceAu": 2.19626723087021,
+			"lightMinutes": 18.26579758
+		},
+		{
+			"date": "2027-11-11",
+			"distanceAu": 2.19871902651602,
+			"lightMinutes": 18.28618854
+		},
+		{
+			"date": "2027-11-12",
+			"distanceAu": 2.201145731772,
+			"lightMinutes": 18.30637083
+		},
+		{
+			"date": "2027-11-13",
+			"distanceAu": 2.20354790353879,
+			"lightMinutes": 18.32634909
+		},
+		{
+			"date": "2027-11-14",
+			"distanceAu": 2.20592608475844,
+			"lightMinutes": 18.34612782
+		},
+		{
+			"date": "2027-11-15",
+			"distanceAu": 2.20828078516776,
+			"lightMinutes": 18.36571126
+		}
+	]
+}
