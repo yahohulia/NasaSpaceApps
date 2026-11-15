@@ -1,12 +1,46 @@
 # Junior Astronaut Mission Trainer — NASA Space Apps 2026
 
-Team project for the challenge **"Build a Junior Astronaut Mission Trainer"**: a Roblox survival game for kids 7–12 (engine switched from browser to Roblox on 2026-11-14; the concept is being adapted). A crew of 3 is stranded on **Mars** after an accident. The player is a mission-control operator on Earth who watches the base through cameras (with real communication delay), splits power between modules and makes daily choices so the crew lasts until the rescue ship arrives. Mascot: Sparky, a little rover who explains science terms.
+Team project for the challenge **"Build a Junior Astronaut Mission Trainer"**: a first-person **co-op** Roblox game for kids 7–12 (1–3 players; solo = switch roles). NASA Space Apps hackathon.
 
-Core loop (one turn = one sol): check cameras → split energy → day decision (EVA / science) → event (dust storm, solar flare from DONKI, breakdown) → day summary. Resources: Energy, Life support (O₂ + water), Food; radiation dose is a threat, not a resource. Ends: rescue arrives, or a resource hits zero → crew evacuated + debrief.
+**Deadline: 2026-11-15, 23:59 Kyiv time.** Feature freeze Sunday 15:00 (after that only bug fixes and recording the demo). Submit by 22:30 Sunday to keep a buffer. Team: 5 people, each with an agent.
 
-Full concept: [[Game concept]] in `kb/concept/game-concept.md` (source: the team's `.docx` concept doc). Older concepts (Sol Sandbox falling-sand, Mission Console) are archived/merged — do not build from them.
+Full concept: [[Co-op campaign concept]] in `kb/concept/coop-campaign.md`. It replaces the mission-control operator concept ([[Game concept]], superseded 2026-11-14) — do not build cameras / energy split / Sparky from it. Older concepts (Sol Sandbox, Mission Console) are archived too.
 
-Status: pre-hackathon (concept + setup). The game code does not exist yet.
+Status: hackathon in progress. The game code is just starting (`src/` has only bootstrap scripts).
+
+## Story
+
+The crew lands on Mars to look for water (ice under the ground). A solar storm damages the rocket that was supposed to take them home, so they must survive until help arrives: drill, greenhouse, electrolyzer, radar. Win: survive until the day help lands.
+
+Campaign chapters (draft, team must confirm):
+1. Landing: base, drill, first ice.
+2. Solar storm: rocket damaged, crew stays.
+3. Greenhouse: first food, water and oxygen under pressure.
+4. Repairs: drill, radar, other machines, a new storm.
+5. Help arrives.
+
+Before the deadline we build **only chapters 1 and 2**; the rest is shown in the presentation. Saving progress is needed for the full campaign, but we do not build it before the deadline.
+
+## Fixed game rules
+
+1. Exactly three resources: **Water, Food, Oxygen**. Everything else (drill, greenhouse, electrolyzer, radar) is a mechanic, not a resource. There is no Energy resource.
+2. No free choices: every action costs something (time, water, safety).
+3. Real NASA data with the source shown in the game. Saved data is labelled ARCHIVED, never LIVE.
+4. Plain words for 7–12. Explain a term (sol, radiation dose) where it first appears.
+5. Full game = story campaign of 5+ hours for co-op. Deadline scope = chapters 1–2 only.
+6. Never invent NASA facts or numbers. Balance numbers live in `Config` and are marked as game values (`-- game value, TODO balance`).
+7. Soft failure: a "mission failed" screen explaining what went wrong. No horror, no death on screen.
+
+## Mechanics (deadline minimum)
+
+- **Drill**: finds ice, gives Water. Breaks, needs repair.
+- **Electrolyzer**: Water → Oxygen (costs water).
+- **Greenhouse**: needs Water, gives Food.
+- **Crew** consumes Water, Food and Oxygen every sol.
+- **Radar**: shows teammates' positions. Can break, can be repaired.
+- Sols change on their own. Sol length is a `Config` value (TODO balance).
+- **Storm event**: taken from a real DONKI record; show the real date and source. Players choose: take shelter (safe, but lose time) or keep working (build up radiation dose). Dose is a player status, not a fourth resource.
+- **Roles (MVP)**: Engineer (repairs), Botanist (greenhouse), Driller (drill and ice).
 
 ## Start here, every session
 
@@ -48,28 +82,49 @@ If HTTPS downloads fail with certificate errors (antivirus/proxy re-signing traf
 
 ## Stack (see [[Decision: Roblox engine]] in kb)
 
-Roblox Studio + Luau. Code lives in git as `.luau` files and is synced into Studio by Rojo (`rojo serve`, then Connect in the Studio Rojo plugin):
-- `src/server` → `ServerScriptService.Server` (game state, simulation, NASA data via `HttpService`)
-- `src/client` → `StarterPlayer.StarterPlayerScripts.Client` (UI, input, cameras/radar view)
-- `src/shared` → `ReplicatedStorage.Shared` (constants, types, pure modules shared by both)
-- Wally packages → `ReplicatedStorage.Packages` / `ServerStorage.ServerPackages` (git-ignored, restored by `wally install`)
+Roblox Studio + Luau (typed, `--!strict` in every module). Code lives in git as `.luau` files and is synced into Studio by **Rojo** (`rojo serve`, then Connect in the Studio Rojo plugin). Do not use Studio Script Sync. The server owns all game state; clients only show it, via RemoteEvents.
 
-The 3D world, models and UI layouts built by hand live in the Studio place (Team Create), not in Rojo; `Workspace` is intentionally not in `default.project.json`. Keep the simulation in pure modules (no Instances) so balance can be tested headless with `lune`.
+| Folder | In Studio | Modules |
+|---|---|---|
+| `src/shared` | `ReplicatedStorage.Shared` | `Config` (all game values), `Remotes`, `Strings` (all UI text), `Assets` |
+| `src/server` | `ServerScriptService.Server` | `ResourceSystem`, `DayCycle`, `StormEvent`, `DonkiService`, `ArchiveEvents`, `Machines/` (`Drill`, `Greenhouse`, `Electrolyzer`, `Radar`) |
+| `src/client` | `StarterPlayer.StarterPlayerScripts.Client` | `Hud`, `FactPopup`, `RadarView` |
+
+Wally packages go to `ReplicatedStorage.Packages` / `ServerStorage.ServerPackages` (git-ignored, restored by `wally install`).
+
+The 3D world, models and UI layouts built by hand live in the Studio place (Team Create), not in Rojo; `Workspace` is intentionally not in `default.project.json`. Keep the simulation (resource math, day cycle) in pure modules (no Instances) so balance can be tested headless with `lune`.
+
+**HttpService**: server only, https only, off by default (Game Settings → Security → Allow HTTP Requests), and rate-limited per server. So: one request at server start, wrapped in `pcall`; on error or timeout, use `ArchiveEvents`. Never write the NASA API key in code and never commit it.
+
+**Always `git pull` before `rojo serve`.** The place is shared (Team Create), so Rojo writes your local `src/` into everyone's game; a stale checkout overwrites newer scripts (e.g. `Airlock`, `Sparky`) for the whole team. Write game scripts only in `src/`, not directly in Studio: scripts made in Studio are not in git and Rojo does not manage them.
 
 Checks before a commit: `selene src` (lint) and `stylua --check src` (format); `rojo build -o build.rbxl` must succeed.
 
 The earlier React Router web scaffold was removed on 2026-11-14 (see [[Decision: React Router SPA]], superseded).
 
+## NASA data
+
+- **DONKI** — API docs (current, OpenAPI): https://ccmc.gsfc.nasa.gov/DONKI/api/ (tool page: https://ccmc.gsfc.nasa.gov/tools/DONKI/). Use the CCMC host, no key needed: `https://ccmc.gsfc.nasa.gov/DONKI-API/get/<FLR|SEP|CME>?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` (keep ranges ≤ 60 days). The old `api.nasa.gov/DONKI/FLR` path returned 404 on 2026-11-14, see [[NASA data sources]].
+- TODO (someone with network access): query a chosen period, take 5–10 real records (id, date, type, class) and put them in `ArchiveEvents`, plus a note in `kb/data/`. Do not invent or round anything.
+- FactPopup facts (each shown with its source name) are candidates listed in [[NASA data sources]]: Mars surface dose (Curiosity RAD), sol length, Phoenix ice depth, NASA ice map (Arcadia Planitia), deep liquid water (InSight). Several URLs are news sites; confirm each against a NASA/primary source before it ships.
+- Game map: based on a real location from NASA's ice map (Arcadia Planitia).
+
+## How the 5 of us work
+
+- One file = one owner. Do not edit someone else's module without agreeing in the team chat.
+- Owners: **Systems** (`ResourceSystem`, `DayCycle`), **World** (map, base — in Studio), **Mechanics** (`Machines/`, roles), **Data+UI** (`DonkiService`, `ArchiveEvents`, `Hud`, `FactPopup`), **Presentation** (GIF, video, slides, text about the data). Shared modules (`Config`, `Remotes`, `Strings`) take small additive edits only; announce them in chat.
+- Test with Play Solo and Team Test. After every change the game must start.
+- Unknown → write a TODO, do not invent.
+
 ## Rules
 
-- Code, identifiers, commit messages: English. Team notes in `kb/` and UI copy: Ukrainian + English.
-- NASA data: always attribute the source in the game; never present archived data as live (label LIVE / ARCHIVED · date). Every number in the game must trace to a note in `kb/data/`.
-- Do not use the NASA logo ("meatball") — including on Sparky's body in the concept sketches; NASA imagery is fine with credit.
-- Audience is 7–12: plain words, short sentences, no deaths, no jump scares (failure = "crew evacuated" + debrief). The concept doc says "suffocation", "lethal dose", "HP" — never put those words in the game; use "evacuation" and "Health".
-- Balance numbers in the concept doc (+10 dose, 80% energy, 15 days…) are placeholders; real-world values must come from `kb/data/`.
+- Code, identifiers, comments, commit messages: English. Team notes in `kb/`: Ukrainian + English.
+- UI text: only through the `Strings` module, English first (Ukrainian added after the deadline).
+- NASA data: always attribute the source in the game; never present archived data as live (label LIVE / ARCHIVED · date). Every real-world number in the game must trace to a note in `kb/data/`.
+- Do not use the NASA logo ("meatball"); NASA imagery is fine with credit.
+- Audience is 7–12: plain words, short sentences, no deaths, no jump scares. Never use words like "suffocation", "lethal dose", "HP" in the game; use "mission failed", "evacuation" and "Health".
 - Keep diffs small and merge often; `main` must always pass `selene`, `stylua --check` and `rojo build`.
 - Use Context7 / the Roblox Creator Docs (`http_get` in the Studio MCP) for API details instead of guessing. Check the running game through the Studio MCP (`start_stop_play`, `get_console_output`, `screen_capture`).
-- Enable **Game Settings → Security → Allow HTTP Requests** for NASA data; HTTP calls only from server scripts, always with a cached/archived fallback.
 
 ## Git authorship (agents)
 

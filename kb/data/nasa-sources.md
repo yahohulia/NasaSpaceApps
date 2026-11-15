@@ -26,7 +26,12 @@ permalink: sol-sandbox/data/nasa-sources
 - [fact] Правило сторінки: для не-урядових (не-US) сайтів треба дотримуватися їхніх умов використання даних.
 - [fact] Перевірка API 2026-11-14 (Node з `--use-system-ca`, бо на машині Ярослава HTTPS іде через нестандартний корінь сертифікатів):
   - **RadLab API** `https://visualization.osdr.nasa.gov/radlab/api/` — працює, без ключа, CSV/TSV/JSON. Є **Curiosity RAD на поверхні Марса** (`instrument_id=MSL-RAD-Surface`, `trajectory=Mars surface`), а також МКС, LRO та інші. Приклад: `?instrument_id=MSL-RAD-Surface&timestamp>=2018-06-01&timestamp<2018-07-15&absorbed_dose_rate&format=csv`. Середнє `absorbed_dose_rate` у червні–липні 2018 ≈ 8,9, у січні 2024 ≈ 5,2, з піком 39 (схоже на сонячну подію).
-  - [question] Документація RadLab пише одиницю «Gy/hour», але значення ~5–9 відповідають **мкГр/год**: 8,9 × 24 ≈ 0,21 мГр/добу, як у публікаціях RAD. Одиницю треба підтвердити в knowledgebase RadLab, перш ніж показувати в грі.
+  - [fact] **Одиниця RadLab `absorbed_dose_rate` = мкГр/год (μGy/hour), поглинена доза.** Перевірено 2026-11-14 двома шляхами:
+    1. База знань RadLab: https://visualization.osdr.nasa.gov/radlab/kb/absorbed_dose_rate (у пошуковому індексі описано як «absorbed radiation dose rate in μGy/hour»; сама сторінка 2026-11-14 віддавала 500).
+    2. Збіг з наукою: Hassler et al. 2014, Science, doi:10.1126/science.1244797 — на поверхні в кратері Гейл 0,210 ± 0,040 мГр/добу (серпень 2012 – червень 2013) = ≈8,75 мкГр/год. Наші дані червень–липень 2018 ≈ 8,9.
+  - [fact] Для `MSL-RAD-Surface` у RadLab **немає** `dose_equivalent_rate` (зіверти): 0 з 1898 рядків за травень 2024. У грі працюємо з поглиненою дозою (Гр).
+  - [fact] Подія 20.05.2024 у наших даних: пік ≈ 304 мкГр/год, фон (медіана 10–31.05.2024) ≈ 4,6 мкГр/год (≈110 мкГр/добу), сума понад фон за 20–22.05 ≈ 1560 мкГр.
+  - [question] Пресреліз NASA/JPL 10.06.2024 (https://www.jpl.nasa.gov/news/nasa-watches-mars-light-up-during-epic-solar-storm) пише «8100 мікрогрей» за подію і «≈700 мікрогрей на добу» звичайно. 700 близько до еквівалентної дози з Hassler (≈0,64–0,67 мЗв/добу), а не до поглиненої (0,21 мГр/добу), тож у релізі, схоже, інша величина. Числа з релізу в гру не беремо.
   - [fact] Дані MSL-RAD-Surface є щонайменше для 2018 і 2024 років. За серпень–вересень 2012 і червень 2025 рядків немає.
   - **DONKI — використовувати новий хост CCMC `https://ccmc.gsfc.nasa.gov/DONKI-API/get/<TYPE>?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`** (з OpenAPI-специфікації на https://ccmc.gsfc.nasa.gov/DONKI/api/). Ключ не потрібен, `Access-Control-Allow-Origin: *`, тож браузерна гра може тягнути дані напряму. Ендпоінти: FLR, SEP, CME, CMEAnalysis, GST, IPS, HSS, MPC, RBE, WSAEnlilSimulations, notifications. Перевірено 15.09–13.11.2026: FLR 25 подій (напр. M6.7 08.10.2026, M6.4 10.10.2026), CME 174, GST 3, SEP 0, notifications 77. Травень 2024: 181 спалах, зокрема X1.6 03.05.2024. Запит SEP за цілий рік повернув «API Error», тож тримаємо діапазон ≤ 60 днів.
   - [fact] Старі шляхи не працюють: `api.nasa.gov/DONKI/FLR` → 404 (CME там ще відповідав), `kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/...` з цієї мережі недоступний.
@@ -38,7 +43,23 @@ permalink: sol-sandbox/data/nasa-sources
   - **RadLab API** не віддає заголовок CORS, тож з браузера напряму не працює: дози готуємо заздалегідь у JSON.
   - **DONKI tools page** https://ccmc.gsfc.nasa.gov/tools/DONKI/ — 200.
   - **CSA STEM** — у браузері відкривається (з Node був ECONNRESET). Корисне там: «Astronautics vocabulary» (для словника Спаркі), «Copyright/permission to reproduce CSA materials» (перевірити перед використанням), «Open data». **CSA food production** — 200.
+- [fact] Перевірка джерел для погодних подій 2026-11-14:
+  - **DONKI WSAEnlilSimulations** має в `impactList` точку `"location":"Mars"`: за травень 2024 — 33 прогнози влучання CME в Марс. Це модельний прогноз CCMC (не вимір), так і підписувати.
+  - **DONKI SEP** — інструменти лише біля Землі/Сонця (GOES, SOHO, STEREO A, ACE); прямих вимірів SEP на Марсі там немає. Для Марса беремо RadLab `MSL-RAD-Surface`.
+  - **Curiosity REMS** (Centro de Astrobiología, Іспанія): `https://mars.nasa.gov/rss/api/?feed=weather&category=msl&feedtype=json` → 200, без ключа, 4745 солів з 2012-08-07 до 2026-08-25. Поля: `terrestrial_date, sol, ls, season, min_temp, max_temp, pressure, local_uv_irradiance_index, sunrise, sunset, min_gts_temp, max_gts_temp`. Умова: «for outreach purposes only», наукові дані — через PDS; у грі вказати CAB як джерело.
+  - REMS `atmo_opacity` майже завжди `Sunny` (4742 з 4745) — для пилу не годиться. Натомість **глобальна пилова буря 2018 видна в даних**: UV-індекс падає з `Very_High` (21.05–05.06.2018) до `Low` (з 19.06.2018), max_temp з +6 °C до −25 °C.
+  - **InSight weather API** (`api.nasa.gov/insight_weather`) — місія завершена у 2022; з DEMO_KEY отримали 429, живих даних не чекаємо.
+  - **Погодні події в грі (2026-11-14):** `src/server/Weather.luau` + `src/shared/WeatherEvents.luau`; знімки робить `node --use-system-ca scripts/snapshots.mjs <name|all>` у `src/server/data/`: `rems-2018` (буря 2018: перший сол з UV `Low` — 2018-06-15, max_temp −15 °C проти +6 °C), `rems-recent` (найхолодніша ніч: сол 4980, 2026-08-09, −78 °C / вдень −7 °C), `radlab-2024-05` (пік 20.05.2024 ≈ 304 при медіані ≈ 4,6 → у грі лише «у 66 разів більше», бо одиниця не підтверджена), `donki-flr`, `donki-enlil-mars`. Спалах і CME беруться наживо з DONKI (30 днів), при збої — зі знімка.
+  - У плейсі ввімкнено `HttpService.HttpEnabled` (Game Settings → Security → Allow HTTP Requests) — живий DONKI з Roblox-сервера працює.
+  - [question] Живого API для марсіанських пилових бур не знайдено. Кандидат на архівний сценарій — буря 2018 (REMS + RadLab за той самий період).
 - [todo] Отримати власний ключ api.nasa.gov (потрібен лише для APOD та інших сервісів api.nasa.gov; DONKI-API від CCMC працює без ключа).
+
+- [question] Кандидати для FactPopup з концепції [[Co-op campaign concept]] (2026-11-14), **не перевірені за першоджерелом**, частина з новинних сайтів:
+  - Доза на поверхні Марса ~0,64 мЗв/добу (Curiosity RAD), у польоті ~1,84 — https://www.nbcnews.com/sciencemain/radiation-mars-manageable-manned-mission-curiosity-finds-2D11716674
+  - Сол 24 год 39 хв — https://www.csmonitor.com/Science/2013/1209/Curiosity-measures-radiation-at-Martian-surface
+  - Phoenix розкопав лід ~4–5 см під поверхнею — https://www.space.com/5626-mars-lander-exposes-ice.html (перевірити формулювання)
+  - Карта льоду NASA: лід < 30 см від поверхні в Arcadia Planitia — https://www.nasa.gov/solar-system/nasas-treasure-map-for-water-ice-on-mars/
+  - Рідка вода, ймовірно, на глибині 11,5–20 км (InSight) — https://www.scientificamerican.com/article/mars-hides-colossal-ocean-deep-below-its-surface/
 
 ## Relations
 - part_of [[Index]]
