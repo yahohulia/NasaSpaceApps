@@ -15,6 +15,7 @@ local eventsModule = ReplicatedStorage:FindFirstChild("MB_Events")
 local EventsConfig = if eventsModule then (require(eventsModule) :: any).Config else nil
 local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
 local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
+local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 local P, B, S = Config.Player, Config.Base, Config.Storm
 local SOL = require(ReplicatedStorage.Shared.Config).SolSeconds
 local rng = Random.new()
@@ -114,6 +115,21 @@ eventCommand.Event:Connect(function(command: string, a: any, b: any)
 	elseif command == "o2Failure" then
 		o2Broken = a == true
 		baseState:SetAttribute("O2Broken", o2Broken)
+	elseif command == "emergencySupplies" then
+		-- MissionDirector, after "Mission stopped": Earth sends supplies, but it costs game hours.
+		local refill = MissionPlan.EMERGENCY_REFILL
+		baseAir = math.max(baseAir, refill)
+		baseState:SetAttribute("BaseAir", baseAir)
+		for _, player in Players:GetPlayers() do
+			for _, name in { "Water", "Food" } do
+				local value = player:GetAttribute(name)
+				if typeof(value) == "number" and value < refill then
+					player:SetAttribute(name, refill)
+				end
+			end
+		end
+		startedAt -= MissionPlan.EMERGENCY_HOURS * SOL / 24 -- the clock jumps forward
+		baseState:SetAttribute("MissionStartedAt", startedAt)
 	end
 end)
 
