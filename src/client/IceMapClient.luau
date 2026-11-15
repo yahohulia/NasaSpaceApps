@@ -272,7 +272,9 @@ function IceMapClient.start()
 		zoomIn.TextTransparency = if level < MAX_LEVEL then 0 else 0.6
 	end
 
+	local openedAt = 0
 	local function open()
+		openedAt = os.clock()
 		gui.Enabled = true
 		setLevel(1)
 	end
@@ -292,10 +294,22 @@ function IceMapClient.start()
 			setLevel(level + (if input.Position.Z > 0 then 1 else -1))
 		end
 	end)
+	-- Any key or gamepad button closes the map, wherever the player is. Mouse clicks and touches do not
+	-- (they work the zoom buttons and X). Keys in the first 0.3 s are the press that opened the map.
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if gui.Enabled and not processed and input.KeyCode == Enum.KeyCode.Escape then
-			closeMap()
+		if not gui.Enabled or os.clock() - openedAt < 0.3 then
+			return
 		end
+		local t = input.UserInputType
+		local isKey = t == Enum.UserInputType.Keyboard or string.sub(t.Name, 1, 7) == "Gamepad"
+		local stick = input.KeyCode == Enum.KeyCode.Thumbstick1 or input.KeyCode == Enum.KeyCode.Thumbstick2
+		if not isKey or stick or input.KeyCode == Enum.KeyCode.Unknown then
+			return
+		end
+		if processed and UserInputService:GetFocusedTextBox() then
+			return -- typing in chat
+		end
+		closeMap()
 	end)
 
 	-- Console prompt (made on this client only) --------------------------------------------
