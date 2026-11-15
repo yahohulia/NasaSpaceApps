@@ -89,7 +89,7 @@ local function setupPlayer(player: Player)
 	player:SetAttribute("Water", P.StartWater)
 	player:SetAttribute("Fatigue", P.StartFatigue)
 	player:SetAttribute("SuitO2", P.StartSuitO2)
-	player:SetAttribute("Ice", 0)
+	player:SetAttribute("Ice", MissionPlan.START_ICE) -- landing supply: enough to drink until the drill works
 	player:SetAttribute("IsInside", false)
 end
 Players.PlayerAdded:Connect(setupPlayer)

@@ -18,6 +18,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Horizons = require(script.Parent.Horizons)
 local Notice = require(script.Parent.Notice)
+local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 local WaterPump = require(script.Parent.WaterPump)
 
@@ -73,6 +74,11 @@ local function samples(baseState: Instance): (number, number)
 	return num(baseState, "SamplesCollected"), num(baseState, "SamplesTotal")
 end
 
+-- Everything the sorting table has put in the base store so far (metals and plain rocks).
+local function sorted(baseState: Instance): number
+	return num(baseState, "Iron") + num(baseState, "Nickel") + num(baseState, "Manganese") + num(baseState, "Rocks")
+end
+
 -- Game minutes -> real seconds (a sol is 24 game hours of Config.SolSeconds real seconds).
 local function gameMinutes(minutes: number): number
 	return minutes * 60 * Config.SolSeconds / (24 * 60 * 60)
@@ -100,6 +106,8 @@ function MissionDirector.start()
 	-- What was seen during the sol, for "fix it again" objectives.
 	local panelsWereDirty, radarWasBroken, o2WasBroken = false, false, false
 	local samplesAtStart = 0
+	local lastGoal = ""
+	local storeAtStart = 0 -- sorted metals + plain rocks in the base store at the start of the sol
 	local iceSeen: { [Player]: number } = {}
 
 	local function current(): MissionPlan.Sol?
@@ -119,6 +127,18 @@ function MissionDirector.start()
 		return false
 	end
 
+	-- The ice drill's recipe progress for the board's goal line; nil once the drill is built.
+	local function drillGoal(): { [string]: number }?
+		if baseState:GetAttribute("DrillBuilt") == true then
+			return nil
+		end
+		local goal = {}
+		for _, key in CraftConfig.RecipeOrder do
+			goal[key] = num(baseState, key)
+		end
+		return goal
+	end
+
 	local function publish()
 		local list = {}
 		for id in done do
@@ -132,6 +152,7 @@ function MissionDirector.start()
 				done = list,
 				debrief = debrief,
 				failed = failed,
+				drill = drillGoal(),
 			})
 		)
 	end
@@ -166,6 +187,7 @@ function MissionDirector.start()
 		emergencies = 0
 		panelsWereDirty, radarWasBroken, o2WasBroken = false, false, false
 		samplesAtStart = samples(baseState)
+		storeAtStart = sorted(baseState)
 		table.clear(iceSeen)
 		for _, player in Players:GetPlayers() do
 			iceSeen[player] = num(player, "Ice")
@@ -289,8 +311,20 @@ function MissionDirector.start()
 			broken.power = true
 		end
 		local got, total = samples(baseState)
-		if got - samplesAtStart >= MissionPlan.SOL3_SAMPLES then
+		if got - samplesAtStart >= MissionPlan.SOL1_SAMPLES then
 			mark("samples")
+		end
+		if sorted(baseState) > storeAtStart then
+			mark("sort")
+		end
+		if baseState:GetAttribute("DrillBuilt") == true then
+			mark("drill")
+		end
+		-- The goal line follows the store (sorting, spare parts) even when no objective ticks.
+		local goalKey = HttpService:JSONEncode(drillGoal() or {})
+		if goalKey ~= lastGoal then
+			lastGoal = goalKey
+			publish()
 		end
 		if baseState:GetAttribute("RadarOK") == false then
 			radarWasBroken = true

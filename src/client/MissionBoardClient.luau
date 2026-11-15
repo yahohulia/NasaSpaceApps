@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local MB_Events = require(ReplicatedStorage.Shared.MB_Events) :: any
 local MissionPlan = require(ReplicatedStorage.Shared.MissionPlan)
 local Strings = require(ReplicatedStorage.Shared.Strings)
@@ -37,6 +38,7 @@ type Payload = {
 		factEvent: string?,
 	}?,
 	failed: string?,
+	drill: { [string]: number }?, -- the ice drill's recipe progress; nil once it is built
 }
 
 local function corner(parent: Instance, px: number)
@@ -228,6 +230,28 @@ function MissionBoardClient.start()
 				FONT,
 				if ok then GOOD else TEXT,
 				2 + i
+			)
+		end
+		-- The main goal of sols 1-3: what the ice drill still needs (CraftConfig.Recipe).
+		local d = p.drill
+		if d and s.sol <= 3 then
+			local r = CraftConfig.Recipe
+			label(
+				board,
+				Strings.get("mission.goal.drill", lang, {
+					iron = d.Iron or 0,
+					needIron = r.Iron,
+					nickel = d.Nickel or 0,
+					needNickel = r.Nickel,
+					manganese = d.Manganese or 0,
+					needManganese = r.Manganese,
+					parts = d.Parts or 0,
+					needParts = r.Parts,
+				}),
+				14,
+				FONT,
+				ACCENT,
+				10
 			)
 		end
 	end
