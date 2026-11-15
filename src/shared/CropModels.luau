@@ -74,7 +74,7 @@ local function stick(model: Model, name: string, from: Vector3, to: Vector3, wid
 end
 
 -- A leaf from `base`, turned by `yaw` around Y and leaning out by `tilt` (0 = up, pi/2 = flat).
--- A thin darker layer under it reads as the leaf's underside and gives it some depth.
+-- One part per leaf (an extra underside layer doubled the parts and made the picker lag).
 local function leaf(
 	model: Model,
 	base: Vector3,
@@ -86,14 +86,6 @@ local function leaf(
 ): Part
 	local cf = CFrame.new(base) * CFrame.Angles(0, yaw, 0) * CFrame.Angles(-tilt, 0, 0) * CFrame.new(0, length / 2, 0)
 	local top = blob(model, "Leaf", Vector3.new(width, length, math.max(width * 0.08, 0.02)), cf, color)
-	local h, s, v = color:ToHSV()
-	blob(
-		model,
-		"LeafUnder",
-		Vector3.new(width * 0.92, length * 0.96, math.max(width * 0.06, 0.02)),
-		cf * CFrame.new(0, 0, 0.012),
-		Color3.fromHSV(h, s * 0.9, v * 0.72)
-	)
 	return top
 end
 

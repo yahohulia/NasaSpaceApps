@@ -57,9 +57,6 @@ CropConfig.PlantHeight = 1 -- studs, height of a fully grown plant on the shelf
 CropConfig.PromptOffset = Vector3.new(0, 0.4, -1.3) -- in front of the rack, at chest height
 CropConfig.InfoOffset = Vector3.new(0, 4.3, -0.6) -- above the rack, for the progress label
 
--- Seed packets and harvest a player can carry (Player.CropBag, shown in the inventory bar).
-CropConfig.CropBagSize = 6 -- game value, TODO balance
-
 CropConfig.SeedCrateTag = "SeedCrate" -- the part with the "Take seeds" prompt
 CropConfig.CrateSlotPrefix = "Slot" -- Attachments Slot1..SlotN inside the crate model
 CropConfig.JournalTag = "CropJournal" -- a part whose front face shows the greenhouse journal

@@ -63,7 +63,11 @@ function CropClient.start()
 
 	-- Spinning 3D models in viewports --------------------------------------------------------
 	local spinning: { Model } = {}
+	local spinOn = false -- only while the picker is open: six 3D plants every frame cost a lot
 	RunService.RenderStepped:Connect(function()
+		if not spinOn then
+			return
+		end
 		local rot = CFrame.Angles(0, os.clock() * 0.7, 0)
 		for _, m in spinning do
 			if m.Parent then
@@ -150,6 +154,7 @@ function CropClient.start()
 
 	local function closePicker()
 		pickGui.Enabled = false
+		spinOn = false
 		pickRack = nil
 		UserInputService.MouseIconEnabled = false -- first person hides the cursor
 	end
@@ -238,6 +243,7 @@ function CropClient.start()
 		end
 		title.Text = if mode == "plant" then t("crop.pick.plantTitle") else t("crop.pick.title")
 		pickGui.Enabled = true
+		spinOn = true
 		UserInputService.MouseIconEnabled = true
 	end
 

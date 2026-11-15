@@ -247,7 +247,7 @@ return {
 	["crop.journal.note"] = "Our time and food are averages from this greenhouse. Days in space: how long it grew on the space station.",
 	["crop.pick.plantTitle"] = "Which seeds will you plant here?",
 	["crop.eat"] = "Eat {crop} [G]",
-	["crop.toast.bag_full"] = "Your crop bag is full. Plant seeds or eat something first.",
-	["crop.toast.bag_full_harvest"] = "Your crop bag is full. Eat something (G), then harvest.",
+	["crop.toast.bag_full"] = "Your bag is full. Plant seeds, eat something or sort your samples first.",
+	["crop.toast.bag_full_harvest"] = "Your bag is full. Eat something (G), then harvest.",
 	["crop.toast.ate"] = "You ate {crop}: +{food} food.",
 }

@@ -151,7 +151,10 @@ local function bindSample(sample: Instance)
 		end
 		local bag = bags[player]
 		local n = if bag then #bag else 0
-		if not bag or n >= CraftConfig.BagSize then
+		-- seed packets and harvest (Player.CropBag, Crops.luau) share the same bag places
+		local cropBag = player:FindFirstChild("CropBag")
+		local crops = if cropBag then #cropBag:GetChildren() else 0
+		if not bag or n + crops >= CraftConfig.BagSize then
 			notify:FireClient(player, "craft.toast.bag_full")
 			return
 		end
@@ -159,7 +162,7 @@ local function bindSample(sample: Instance)
 		table.insert(bag, { key = key, view = putInBagView(player, sample) })
 		player:SetAttribute("BagSamples", n + 1)
 		sample:Destroy()
-		notify:FireClient(player, "craft.toast.picked", { n = n + 1, max = CraftConfig.BagSize })
+		notify:FireClient(player, "craft.toast.picked", { n = n + 1 + crops, max = CraftConfig.BagSize })
 		firstPickup(player)
 	end)
 end

@@ -6,7 +6,8 @@
 -- Attachments Slot1..SlotN), the racks (Workspace.Greenhouse_PlantRacks.PlantRack_*), and the
 -- journal board (a part tagged CropJournal).
 --
--- Inventory: Player.CropBag (Folder) holds up to CropConfig.CropBagSize items, each a StringValue:
+-- Inventory: Player.CropBag (Folder) holds the crop items, each a StringValue (they share the
+-- CraftConfig.BagSize places of the bag with the rock samples):
 --   Name "Seed" or "Produce", Value = crop id, attributes Order (pickup order) and Food (produce).
 -- CraftClient shows them in the inventory bar next to the samples.
 --
@@ -23,6 +24,7 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local CropConfig = require(ReplicatedStorage.Shared.CropConfig)
 local CropModels = require(ReplicatedStorage.Shared.CropModels)
 local Strings = require(ReplicatedStorage.Shared.Strings)
@@ -102,7 +104,10 @@ local function items(player: Player, kind: string?): { StringValue }
 end
 
 local function addItem(player: Player, kind: string, id: string, food: number?): boolean
-	if #items(player) >= CropConfig.CropBagSize then
+	-- one bag for everything: rock samples (Crafting) and crop items share CraftConfig.BagSize places
+	local samples = player:GetAttribute("BagSamples")
+	local used = #items(player) + (if typeof(samples) == "number" then samples else 0)
+	if used >= CraftConfig.BagSize then
 		return false
 	end
 	order += 1
@@ -119,7 +124,7 @@ end
 
 -- Plant models --------------------------------------------------------------------------------------
 
-local VISUAL_STEPS = 20 -- rebuild the plant models every 5 % of growth
+local VISUAL_STEPS = 10 -- rebuild the plant models every 10 % of growth (each rebuild is ~300 parts)
 
 local function plantSpots(rack: Rack): { CFrame }
 	local spots = {}
