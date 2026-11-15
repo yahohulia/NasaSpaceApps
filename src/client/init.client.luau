@@ -1,5 +1,6 @@
 local BaseLightsClient = require(script.BaseLightsClient)
 local CraftClient = require(script.CraftClient)
+local DoorClient = require(script.DoorClient)
 local FirstPersonClient = require(script.FirstPersonClient)
 local FootprintsClient = require(script.FootprintsClient)
 local IceMapClient = require(script.IceMapClient)
@@ -27,5 +28,6 @@ task.spawn(BaseLightsClient.start)
 task.spawn(SparkyClient.start)
 task.spawn(SuitClient.start)
 task.spawn(WeatherClient.start)
+task.spawn(DoorClient.start)
 
 print("[junior-astronaut] client started")

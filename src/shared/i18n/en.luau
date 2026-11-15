@@ -53,6 +53,7 @@ return {
 	["radiation.level.high"] = "Your dose is high now. The medic says: head back to the base.",
 	["radiation.level.limit"] = "That's enough radiation! The medic will keep you inside until the mission ends.",
 	["radiation.blocked"] = "The medic won't let you out: your dose is at the limit. Help the team inside!",
+	["suit.take_off_first"] = "Take off your suit first. Hang it in the suit locker.",
 	["craft.prompt.pickup"] = "Pick up",
 	["craft.object.sample"] = "Sample",
 	["craft.prompt.salvage"] = "Take spare part",
