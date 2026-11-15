@@ -13,6 +13,7 @@ local Config = require(ReplicatedStorage:WaitForChild("MB_Config"))
 local SolarEvents = require(ReplicatedStorage:WaitForChild("MB_SolarEvents"))
 local eventsModule = ReplicatedStorage:FindFirstChild("MB_Events")
 local EventsConfig = if eventsModule then (require(eventsModule) :: any).Config else nil
+local LightsConfig = require(ReplicatedStorage.Shared.LightsConfig)
 local MissionClock = require(ReplicatedStorage.Shared.MissionClock)
 local P, B, S = Config.Player, Config.Base, Config.Storm
 local SOL = require(ReplicatedStorage.Shared.Config).SolSeconds
@@ -288,7 +289,9 @@ local function tick()
 	local efficiency = baseState:GetAttribute("PanelEfficiency")
 	local panels = if typeof(efficiency) == "number" then efficiency else 1
 	local solar = if day then B.SolarPower * panels * (if stormActive then S.SolarFactor else 1) else 0
-	power = clamp100(power + (solar - B.BaseLoadPower) * dt)
+	local litRooms = baseState:GetAttribute("LitRooms")
+	local lights = LightsConfig.PowerPerLitRoom * (if typeof(litRooms) == "number" then litRooms else 0)
+	power = clamp100(power + (solar - B.BaseLoadPower - lights) * dt)
 	if o2Broken then
 		if EventsConfig then
 			baseAir -= EventsConfig.BASEAIR_DRAIN * dt -- broken generator: the air runs out
