@@ -4,12 +4,17 @@
 -- A new weather event shows the full card for SHOW_SECONDS, then it folds into a small square
 -- (same place, icon of the event) that stays while the weather lasts. Tap the square -> the full card
 -- again; it stays open until the player taps X. Calm weather hides both.
+-- The square joins the event squares in the column on the left side (EventUI's MB_EventUI.Icons).
+-- Keyboard: T (MB_Events.Config.TOGGLE_KEY, handled by EventUI) shows the cards one by one; this card follows
+-- the LocalPlayer attributes MB_EventsOpen / MB_EventsToggleId.
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Strings = require(ReplicatedStorage.Shared.Strings)
+local TOGGLE_KEY = (require(ReplicatedStorage.Shared.MB_Events) :: any).Config.TOGGLE_KEY :: Enum.KeyCode
 
 local PANEL = Color3.fromRGB(27, 35, 48)
 local BORDER = Color3.fromRGB(232, 150, 60)
@@ -128,9 +133,10 @@ local function makeCard(playerGui: PlayerGui): Card
 	tap.Size = UDim2.fromScale(1, 0.36)
 	tap.BackgroundTransparency = 1
 	tap.Font = Enum.Font.GothamBold
-	tap.TextSize = 12
+	tap.TextSize = 13 -- same as the timer on the event squares (EventUI)
 	tap.TextColor3 = TEXT
-	tap.Text = "tap"
+	-- The key to press on a computer, "tap" on a phone or tablet.
+	tap.Text = if UserInputService.KeyboardEnabled then TOGGLE_KEY.Name else "tap"
 	tap.Parent = square
 
 	-- X on the top-right corner of the open card (outside the list layout, placed every frame).
@@ -181,20 +187,47 @@ function WeatherClient.start()
 	local foldAt = 0
 	local shown = "" -- the payload on screen; a new one shows the full card again
 
+	local inColumn = false -- true once the square sits in EventUI's side column
+
 	local function apply()
 		local open = mode == "full" or mode == "open"
+		card.gui:SetAttribute("Mode", mode) -- EventUI: "full" = popped up by itself, "open" = opened by the player
 		card.gui.Enabled = mode ~= "hidden"
 		card.box.Visible = open
 		card.close.Visible = open
-		card.square.Visible = mode == "square"
+		-- In the side column the square stays while the weather lasts; on its own it replaces the card.
+		card.square.Visible = if inColumn then mode ~= "hidden" else mode == "square"
 	end
 
+	-- Move the square into the side column of EventUI when it exists (else it stays where the card is).
+	task.spawn(function()
+		local eventGui = card.gui.Parent and card.gui.Parent:WaitForChild("MB_EventUI", 30)
+		local column = eventGui and eventGui:WaitForChild("Icons", 10)
+		if column then
+			card.square.Name = "WeatherSquare"
+			card.square.AnchorPoint = Vector2.new(0, 0)
+			card.square.LayoutOrder = 0 -- on top of the event squares
+			card.square.Parent = column
+			inColumn = true
+			apply()
+		end
+	end)
+
 	card.square.Activated:Connect(function()
-		mode = "open"
+		mode = if mode == "open" or mode == "full" then "square" else "open"
 		apply()
 	end)
 	card.close.Activated:Connect(function()
 		mode = "square"
+		apply()
+	end)
+
+	-- T (EventUI): open or fold this card together with the event cards.
+	player:GetAttributeChangedSignal("MB_EventsToggleId"):Connect(function()
+		if mode == "hidden" then
+			return
+		end
+		mode = if player:GetAttribute("MB_EventsOpen") == true then "open" else "square"
 		apply()
 	end)
 
@@ -203,7 +236,7 @@ function WeatherClient.start()
 			mode = "square"
 			apply()
 		end
-		if mode == "square" then
+		if mode == "square" and not inColumn then
 			-- Same spot as the card (MB_HUD moves the Box under its top bar).
 			card.square.Position = card.box.Position
 		elseif card.close.Visible then

@@ -145,3 +145,27 @@ Sol 1 keeps the existing 5-step tutorial; the board shows the sol objectives und
   look (reuse the EventUI card style), timing jitter values, light load per room and the time cost of
   emergency supplies (all `-- game value, TODO balance`).
 - A missed objective only shows in the debrief (no carry-over cost) unless playtests say otherwise.
+
+## Revision 2026-11-15 evening: the path to the ice drill (Yaroslav)
+
+Playtest math showed the first plan could not be played: digging ice needs the crafted drill
+(samples -> sorting table -> metals, satellite spare parts, recipe 12 iron / 4 nickel / 3 manganese /
+2 parts, `CraftConfig`), which takes one player about 10-15 minutes (~sols 1-3), while water
+(drain 0.18/s, a drink = 1 ice = +35) runs out in ~7.5 minutes. With the "whole crew without water"
+failure rule every run would stop on sol 2.
+
+New plan (objectives lead to the drill step by step, the drill works on sol 3):
+
+| Sol | Objectives |
+|---|---|
+| 1 Landing | go outside in the suit · collect 5 rock samples · sort them at the table |
+| 2 Dust and power | clean the panels · fix the water pump · plant a crop |
+| 3 Water from ice | build the ice drill · dig ice and drink · nobody gets too much radiation |
+| 4 Things break | repair the radar · fix the oxygen generator · harvest a crop |
+| 5 Launch window | tell Earth through Sparky we are ready · 10 samples in all · launch |
+
+- Sols 1-3 also show a goal line with the drill recipe progress (base store vs `CraftConfig.Recipe`).
+- The crew lands with `MissionPlan.START_ICE = 3` ice each (landing supply) to drink until the drill works.
+- Sol 5 asks for `MissionPlan.MISSION_SAMPLES = 10` samples (Workspace.Samples holds 302).
+- Debrief facts: sol 1 Opportunity's iron meteorite (kb/data/mars-metals.md), sol 3 the NASA ice map
+  (kb/data/ice-map.md); sols 2, 4, 5 keep the MB_Events facts.

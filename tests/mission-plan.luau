@@ -10,8 +10,22 @@ for i, s in plan.sols do
 	assert(s.sol == i, `sol {i} is in order`)
 	assert(#s.objectives >= 2 and #s.objectives <= 3, `sol {i} has 2-3 objectives`)
 end
-assert(plan.sols[2].objectives[2].id == "power" and plan.sols[2].objectives[2].kind == "keep")
-assert(plan.sols[3].objectives[1].id == "storm" and plan.sols[3].objectives[1].kind == "keep")
+-- Objectives lead to the ice drill step by step: samples and sorting (sol 1), the drill on sol 3.
+local function ids(n)
+	local t = {}
+	for _, o in plan.sols[n].objectives do
+		table.insert(t, o.id)
+	end
+	return table.concat(t, ",")
+end
+assert(ids(1) == "outside,samples,sort", ids(1))
+assert(ids(2) == "panels,pump,plant", ids(2))
+assert(ids(3) == "drill,ice,storm", ids(3))
+assert(ids(4) == "radar,oxygen,harvest", ids(4))
+assert(ids(5) == "earth,allSamples,launch", ids(5))
+assert(plan.sols[3].objectives[3].kind == "keep", "the storm objective is judged at the end of the sol")
+-- The crew lands with enough ice to drink until the drill works (a drink = 1 ice = +35 water).
+assert(plan.START_ICE >= 2 and plan.START_ICE <= 5)
 
 -- Failure only when base air is gone or the WHOLE crew has no water / no food.
 assert(

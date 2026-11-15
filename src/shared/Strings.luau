@@ -6,8 +6,15 @@ export type Lang = "uk" | "en"
 
 local Strings = {}
 
+-- The whole game is in English for now (AGENTS.md: English first, Ukrainian after the deadline).
+-- Set to nil to pick the language from the player's locale again (i18n/uk.luau is kept up to date).
+Strings.FORCED_LANG = "en" :: Lang?
+
 -- Picks the language from a Roblox locale id such as "uk-ua" or "en-us".
 function Strings.langFromLocale(localeId: string): Lang
+	if Strings.FORCED_LANG then
+		return Strings.FORCED_LANG
+	end
 	if string.sub(string.lower(localeId), 1, 2) == "uk" then
 		return "uk"
 	end

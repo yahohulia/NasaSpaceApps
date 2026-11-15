@@ -4,11 +4,9 @@
 -- Player-facing text lives in i18n (keys "icemap.*"), read through Shared.Strings.
 local IceMapConfig = {}
 
--- The image asset (rbxassetid://122016476140910) belongs to a different account than the place,
--- so the place can't load it directly. The thumbnail loads; Roblox stretches it to 768x432, and the
--- viewport (aspect of the original) stretches it back. For a sharper map, grant the universe "Use"
--- permission on the asset (or re-upload from the place owner) and switch to rbxassetid.
-IceMapConfig.Image = "rbxthumb://type=Asset&id=122016476140910&w=768&h=432"
+-- The image, re-uploaded by the place owner (Maria_Strawberi, 2026-11-15) so the place can load it directly.
+-- The first upload (rbxassetid://122016476140910) belonged to another account and only its thumbnail loaded.
+IceMapConfig.Image = "rbxassetid://85333712790591"
 IceMapConfig.ImageSize = Vector2.new(1614, 720) -- size of the original file, in pixels
 IceMapConfig.Credit = "NASA/JPL-Caltech/ASU"
 IceMapConfig.ArchivedDate = "2019-12-10" -- date of the NASA article with this map

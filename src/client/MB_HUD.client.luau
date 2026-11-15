@@ -38,6 +38,9 @@ local MESSAGES = {
 	rocket_ready = "The rocket is ready! Go to the launch console.",
 	rocket_not_ready = "Not ready yet. Still to do: {n}.",
 	new_mission = "A new mission begins. Good luck!",
+	not_tired = "You are not tired yet. Come back later!",
+	beds_full = "All beds are taken. Wait a little.",
+	slept_well = "Good morning! You are fully rested.",
 }
 
 local COLORS = {
@@ -50,7 +53,7 @@ local COLORS = {
 	radiation = Color3.fromRGB(150, 196, 90),
 	suit = Color3.fromRGB(196, 84, 64),
 	food = Color3.fromRGB(196, 102, 58),
-	water = Color3.fromRGB(88, 126, 214),
+	water = Color3.fromRGB(80, 190, 255), -- light blue, like water
 	fatigue = Color3.fromRGB(130, 112, 216),
 	ice = Color3.fromRGB(190, 230, 255),
 	storm = Color3.fromRGB(150, 40, 30),
@@ -64,13 +67,13 @@ local FONT = Font.new(Font.fromEnum(Enum.Font.BuilderSans).Family, Enum.FontWeig
 local LOW_AT = 20
 local REFERENCE_HEIGHT = 480 -- the mock-up is a phone screen
 
--- Small pixel icons ("#" = pixel), tinted per row.
+-- Small pixel icons ("#" = pixel, "o" = light shine pixel), tinted per row.
 local ICONS: { [string]: { string } } = {
 	Power = { "...##..", "..##...", ".##....", "#####..", "...##..", "..##...", ".##...." },
 	Air = { "....##.", "......#", "######.", ".......", "####...", ".......", "#####.." },
 	Radiation = { "##...##", "###.###", ".#.#.#.", "...#...", "..###..", "..###..", "......." },
 	Food = { "...#...", "..#....", ".#####.", "#######", "#######", ".#####.", "..###.." },
-	Water = { "...#...", "..###..", ".#####.", ".#####.", "#######", "#######", ".#####." },
+	Water = { "...#...", "..###..", ".#o###.", "#o#####", "#######", ".#####.", "..###.." }, -- a water drop
 	Tired = { "####...", "..#....", ".#.....", "####...", "....###", ".....#.", "....###" },
 	Ice = { "#..#..#", ".#.#.#.", "..###..", "#######", "..###..", ".#.#.#.", "#..#..#" },
 	Rock = { "..###..", ".#####.", "#######", "#######", ".#####.", "..###..", "......." },
@@ -113,14 +116,17 @@ local function icon(name: string, color: Color3): Icon
 		Size = UDim2.fromOffset(#rows[1] * px, #rows * px),
 	})
 	local pixels: { Frame } = {}
+	local shine: { Frame } = {} -- "o" pixels: a lighter tint of the icon colour (the shine on a water drop)
+	local WHITE = Color3.new(1, 1, 1)
 	for y, row in rows do
 		for x = 1, #row do
-			if string.sub(row, x, x) == "#" then
+			local ch = string.sub(row, x, x)
+			if ch == "#" or ch == "o" then
 				table.insert(
-					pixels,
+					if ch == "o" then shine else pixels,
 					new("Frame", {
 						BorderSizePixel = 0,
-						BackgroundColor3 = color,
+						BackgroundColor3 = if ch == "o" then color:Lerp(WHITE, 0.65) else color,
 						Size = UDim2.fromOffset(px, px),
 						Position = UDim2.fromOffset((x - 1) * px, (y - 1) * px),
 						Parent = frame,
@@ -134,6 +140,9 @@ local function icon(name: string, color: Color3): Icon
 		setColor = function(c: Color3)
 			for _, p in pixels do
 				p.BackgroundColor3 = c
+			end
+			for _, p in shine do
+				p.BackgroundColor3 = c:Lerp(WHITE, 0.65)
 			end
 		end,
 		destroy = function()
@@ -332,8 +341,9 @@ local stormTime = new("TextLabel", {
 	Parent = stormPill,
 })
 
--- Messages under the centre column.
+-- Messages under the centre column (EventUI leaves room for it under the event card).
 local toast = new("TextLabel", {
+	Name = "Toast",
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 150),
 	AutomaticSize = Enum.AutomaticSize.Y,
@@ -410,8 +420,9 @@ local foodRow = statRow(1, "Food", COLORS.food, 96)
 foodRow.root.Parent = needs
 local waterRow = statRow(2, "Water", COLORS.water, 96)
 waterRow.root.Parent = needs
-local fatigueRow = statRow(3, "Tired", COLORS.fatigue, 96, function(f)
-	return f * 100 >= Config.Player.TiredAt -- tiredness is bad when HIGH
+-- The purple bar shows how RESTED the player is (100 - Fatigue): full after a sleep, it empties as they get tired.
+local fatigueRow = statRow(3, "Tired", COLORS.fatigue, 96, function(rest)
+	return (1 - rest) * 100 >= Config.Player.TiredAt -- warning colour when very tired
 end)
 fatigueRow.root.Parent = needs
 local iceRow = new("Frame", {
@@ -535,7 +546,7 @@ watch(player, { "Water" }, function()
 	waterRow.set(num(player, "Water") / 100)
 end)
 watch(player, { "Fatigue" }, function()
-	fatigueRow.set(num(player, "Fatigue") / 100)
+	fatigueRow.set(1 - num(player, "Fatigue") / 100)
 end)
 watch(player, { "Ice" }, function()
 	local ice = num(player, "Ice")
@@ -590,6 +601,27 @@ local function hideOldHud()
 	end
 end
 
+-- Top of the team's message near the bottom (NoticeClient "Toast"), screen space; nil when it is not shown.
+local function noticeTop(): number?
+	local notice = playerGui:FindFirstChild("Toast")
+	local nbox = notice and notice:FindFirstChild("Box")
+	if notice and notice:IsA("ScreenGui") and notice.Enabled and nbox and nbox:IsA("GuiObject") and nbox.Visible then
+		return nbox.AbsolutePosition.Y
+	end
+	return nil
+end
+
+-- Lowest y the centre stack (weather card + our message) may reach: the upper half, above the team's message.
+local function stackBottom(): number
+	local camera = workspace.CurrentCamera
+	local bottom = (if camera then camera.ViewportSize.Y else 600) * 0.55
+	local top = noticeTop()
+	if top then
+		bottom = math.min(bottom, top - 8)
+	end
+	return bottom
+end
+
 local function placeWeatherCard(): number
 	local y = center.AbsolutePosition.Y + center.AbsoluteSize.Y + 10
 	local card = playerGui:FindFirstChild("WeatherCard")
@@ -599,7 +631,18 @@ local function placeWeatherCard(): number
 		box.Position = UDim2.new(0.5, 0, 0, y)
 		box.BackgroundColor3 = COLORS.pill
 		box.BackgroundTransparency = PILL_ALPHA
-		y += box.AbsoluteSize.Y + 10
+		-- Shrink the card (down to 60 %) when it would not fit above the team's message and our own message.
+		local fit = box:FindFirstChild("MB_Fit")
+		if not fit then
+			fit = Instance.new("UIScale")
+			fit.Name = "MB_Fit"
+			fit.Parent = box
+		end
+		local scale = fit :: UIScale
+		local natural = box.AbsoluteSize.Y / scale.Scale
+		local room = stackBottom() - y - (if toast.Visible then toast.AbsoluteSize.Y + 10 else 0)
+		scale.Scale = math.clamp(room / math.max(natural, 1), 0.6, 1)
+		y += natural * scale.Scale + 10
 	end
 	return y
 end
@@ -612,7 +655,15 @@ end
 
 RunService.RenderStepped:Connect(function()
 	hideOldHud()
-	toast.Position = UDim2.new(0.5, 0, 0, placeWeatherCard())
+	-- Messages go under the weather card and under the EventUI card (EventUI writes EventBottom on this gui).
+	local eventBottom = gui:GetAttribute("EventBottom")
+	local toastY = math.max(placeWeatherCard(), if typeof(eventBottom) == "number" then eventBottom else 0)
+	-- Never down onto the team's message near the bottom of the screen.
+	local nTop = noticeTop()
+	if nTop and toast.Visible then
+		toastY = math.min(toastY, nTop - 8 - toast.AbsoluteSize.Y)
+	end
+	toast.Position = UDim2.new(0.5, 0, 0, toastY)
 
 	local now = workspace:GetServerTimeNow()
 	local startedAt = baseState:GetAttribute("MissionStartedAt")

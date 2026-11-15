@@ -36,14 +36,18 @@ local MissionPlan = {}
 MissionPlan.JITTER_HOURS = 1 -- game value, TODO balance: scheduled events move by up to this many game hours
 MissionPlan.EMERGENCY_HOURS = 4 -- game value, TODO balance: emergency supplies cost this many game hours
 MissionPlan.EMERGENCY_REFILL = 50 -- game value, TODO balance: air / water / food are raised to at least this
-MissionPlan.SOL3_SAMPLES = 3 -- game value, TODO balance: samples to collect on sol 3
+MissionPlan.SOL1_SAMPLES = 5 -- game value, TODO balance: samples to collect on sol 1
+MissionPlan.START_ICE = 3 -- game value, TODO balance: ice each crew member lands with (a drink = 1 ice = +35 water),
+-- enough to last until the drill works on sol 3
+MissionPlan.MISSION_SAMPLES = 10 -- game value, TODO balance: samples for the whole mission (sol 5); one full bag
 
 MissionPlan.sols = {
-	sol(1, nil, { obj("outside", "do"), obj("ice", "do"), obj("plant", "do") }),
-	sol(2, "DustStorm", { obj("panels", "do"), obj("power", "keep"), obj("pump", "do") }),
-	sol(3, "SolarStorm", { obj("storm", "keep"), obj("earth", "do"), obj("samples", "do") }),
+	-- Sols 1-3 lead to the ice drill step by step (the board also shows the drill's recipe progress).
+	sol(1, nil, { obj("outside", "do"), obj("samples", "do"), obj("sort", "do") }),
+	sol(2, "DustStorm", { obj("panels", "do"), obj("pump", "do"), obj("plant", "do") }),
+	sol(3, nil, { obj("drill", "do"), obj("ice", "do"), obj("storm", "keep") }),
 	sol(4, "O2Failure", { obj("radar", "do"), obj("oxygen", "do"), obj("harvest", "do") }),
-	sol(5, "LaunchWindow", { obj("allSamples", "do"), obj("launch", "do") }),
+	sol(5, "LaunchWindow", { obj("earth", "do"), obj("allSamples", "do"), obj("launch", "do") }),
 }
 
 -- Why the mission stops, or nil. Base air at zero, or the whole crew with no water / no food.
