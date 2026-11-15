@@ -14,12 +14,12 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Strings = require(ReplicatedStorage.Shared.Strings)
+local Style = require(ReplicatedStorage.Shared.NoticeStyle)
 local TOGGLE_KEY = (require(ReplicatedStorage.Shared.MB_Events) :: any).Config.TOGGLE_KEY :: Enum.KeyCode
 
 local PANEL = Color3.fromRGB(27, 35, 48)
 local BORDER = Color3.fromRGB(232, 150, 60)
-local TEXT = Color3.fromRGB(225, 232, 238)
-local DIM = Color3.fromRGB(150, 162, 176)
+local TEXT = Style.TextColor -- every line of the card; only the border is orange
 local SHOW_SECONDS = 5 -- the full card, then the square
 local ICONS = { dust = "🌪", cold = "❄", radiation = "☢", flare = "☀", cme = "🌞" }
 
@@ -37,23 +37,16 @@ type Card = {
 	footer: TextLabel,
 }
 
-local function label(
-	parent: Instance,
-	name: string,
-	order: number,
-	size: number,
-	color: Color3,
-	bold: boolean
-): TextLabel
+local function label(parent: Instance, name: string, order: number, size: number, bold: boolean): TextLabel
 	local l = Instance.new("TextLabel")
 	l.Name = name
 	l.LayoutOrder = order
 	l.Size = UDim2.fromScale(1, 0)
 	l.AutomaticSize = Enum.AutomaticSize.Y
 	l.BackgroundTransparency = 1
-	l.Font = if bold then Enum.Font.GothamBold else Enum.Font.Gotham
+	l.FontFace = if bold then Style.Heavy else Style.Font
 	l.TextSize = size
-	l.TextColor3 = color
+	l.TextColor3 = TEXT
 	l.TextWrapped = true
 	l.TextXAlignment = Enum.TextXAlignment.Left
 	l.Text = ""
@@ -122,7 +115,7 @@ local function makeCard(playerGui: PlayerGui): Card
 	icon.Name = "Icon"
 	icon.Size = UDim2.fromScale(1, 0.62)
 	icon.BackgroundTransparency = 1
-	icon.Font = Enum.Font.GothamBold
+	icon.FontFace = Style.Bold
 	icon.TextSize = 26
 	icon.TextColor3 = TEXT
 	icon.Text = "🌦"
@@ -132,8 +125,8 @@ local function makeCard(playerGui: PlayerGui): Card
 	tap.Position = UDim2.fromScale(0, 0.58)
 	tap.Size = UDim2.fromScale(1, 0.36)
 	tap.BackgroundTransparency = 1
-	tap.Font = Enum.Font.GothamBold
-	tap.TextSize = 13 -- same as the timer on the event squares (EventUI)
+	tap.FontFace = Style.Bold
+	tap.TextSize = Style.SmallSize -- same as the timer on the event squares (EventUI)
 	tap.TextColor3 = TEXT
 	-- The key to press on a computer, "tap" on a phone or tablet.
 	tap.Text = if UserInputService.KeyboardEnabled then TOGGLE_KEY.Name else "tap"
@@ -145,7 +138,7 @@ local function makeCard(playerGui: PlayerGui): Card
 	close.AnchorPoint = Vector2.new(0.5, 0.5)
 	close.Size = UDim2.fromOffset(30, 30)
 	close.BackgroundColor3 = Color3.fromRGB(55, 55, 66)
-	close.Font = Enum.Font.GothamBold
+	close.FontFace = Style.Heavy
 	close.TextSize = 16
 	close.TextColor3 = TEXT
 	close.Text = "X"
@@ -167,10 +160,10 @@ local function makeCard(playerGui: PlayerGui): Card
 		square = square,
 		icon = icon,
 		close = close,
-		title = label(box, "Title", 1, 22, BORDER, true),
-		body = label(box, "Body", 2, 18, TEXT, false),
-		fact = label(box, "Fact", 3, 16, TEXT, false),
-		footer = label(box, "Footer", 4, 13, DIM, false),
+		title = label(box, "Title", 1, Style.TitleSize, true),
+		body = label(box, "Body", 2, Style.TextSize, false),
+		fact = label(box, "Fact", 3, Style.TextSize, false),
+		footer = label(box, "Footer", 4, Style.TextSize, false),
 	}
 	gui.Parent = playerGui
 	return card
@@ -185,12 +178,35 @@ function WeatherClient.start()
 	-- "hidden" (calm) | "full" (new event, folds after SHOW_SECONDS) | "open" (until X) | "square"
 	local mode = "hidden"
 	local foldAt = 0
-	local shown = "" -- the payload on screen; a new one shows the full card again
+	local shown = "" -- id|date|label of the event on screen; a new event shows the full card again
 
 	local inColumn = false -- true once the square sits in EventUI's side column
 
-	local function apply()
+	-- Flicker guard: if the card opened and closed more than MAX_FLIPS times within a second, something keeps
+	-- pushing it (e.g. two cards folding each other); then it stays folded for CALM_SECONDS.
+	local MAX_FLIPS, CALM_SECONDS = 4, 3
+	local flips: { number } = {}
+	local calmUntil = 0
+	local wasOpen = false
+
+	-- byPlayer: the player tapped the square (always allowed, even during the flicker pause).
+	local function apply(byPlayer: boolean?)
 		local open = mode == "full" or mode == "open"
+		local now = os.clock()
+		if open and not byPlayer and now < calmUntil then
+			mode, open = "square", false
+		end
+		if open ~= wasOpen then
+			table.insert(flips, now)
+			while flips[1] and now - flips[1] > 1 do
+				table.remove(flips, 1)
+			end
+			if #flips > MAX_FLIPS then
+				calmUntil = now + CALM_SECONDS
+				table.clear(flips)
+			end
+			wasOpen = open
+		end
 		card.gui:SetAttribute("Mode", mode) -- EventUI: "full" = popped up by itself, "open" = opened by the player
 		card.gui.Enabled = mode ~= "hidden"
 		card.box.Visible = open
@@ -215,7 +231,7 @@ function WeatherClient.start()
 
 	card.square.Activated:Connect(function()
 		mode = if mode == "open" or mode == "full" then "square" else "open"
-		apply()
+		apply(true)
 	end)
 	card.close.Activated:Connect(function()
 		mode = "square"
@@ -279,8 +295,10 @@ function WeatherClient.start()
 		card.footer.Text =
 			`{payload.source} · {payload.credit} · {Strings.get(labelKey, lang, { date = payload.date })}`
 		card.icon.Text = ICONS[payload.id] or "🌦"
-		if raw ~= shown then
-			shown = raw
+		-- Same event again (the JSON text can differ in key order) = no new pop-up.
+		local key = `{payload.id}|{payload.date}|{payload.label}`
+		if key ~= shown then
+			shown = key
 			mode = "full"
 			foldAt = os.clock() + SHOW_SECONDS
 		end
