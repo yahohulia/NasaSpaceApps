@@ -36,6 +36,7 @@ permalink: sol-sandbox/concept/base-layout
 - [fact] Невидимі стіни `Workspace.MapBounds` (`WallN/S/E/W`) на ±680, висота 800, всередині гір (рельєф біля стін 79–209 студів). Без них персонаж міг би вилізти на гору. Щоб відкотити розширення: видалити `MapBounds` і залити `Air` усе поза квадратом ±256.
 - [fact] `screen_capture` у Studio MCP лишає камеру Studio в режимі `Scriptable`. Після знімків повертайте `workspace.CurrentCamera.CameraType = Enum.CameraType.Fixed`, інакше в Studio не можна крутити камеру.
 - [question] Сонячні панелі (`Workspace.Base.SolarPanels`) і камери (`Workspace.Cameras`) лишилися зі старої концепції ([[Game concept]]). Енергії як ресурсу немає, тож панелі — декорація. Чи лишаємо камери?
+- [decision] Вуличні ліхтарі прибрано (2026-11-15): 9 стовпів `Workspace.MB_BaseLights` навколо бази (тег `MB_NightLight`, вмикав їх уночі `MB_Atmosphere`) перенесено в `ServerStorage.MB_BaseLightsBackup`. `MB_Atmosphere` без них працює (просто не знаходить ламп). Маяки посадкового майданчика (`LandingZone.Beacons`) і зелена/червона лампа над шлюзом лишились.
 
 ## Relations
 - part_of [[Co-op campaign concept]]

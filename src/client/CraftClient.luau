@@ -226,6 +226,12 @@ function CraftClient.start()
 	notify.OnClientEvent:Connect(function(key: string, vars: { [string]: string | number }?)
 		toastId += 1
 		local id = toastId
+		-- a crop id in vars ("Lettuce") becomes its name in the player's language
+		if vars and typeof(vars.crop) == "string" then
+			local named = table.clone(vars)
+			named.crop = t("crop.name." .. vars.crop)
+			vars = named
+		end
 		toast.Text = t(key, vars)
 		TweenService:Create(toast, fade, { TextTransparency = 0, BackgroundTransparency = 0.1 }):Play()
 		task.delay(TOAST_SECONDS, function()
