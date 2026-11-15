@@ -1,8 +1,9 @@
 --!strict
--- Soldering mini game and the "carry the board" hint. The server (SolderStation) owns the game;
--- this only draws it and sends hold / release / test / close.
--- How it plays: hold the glowing contact, the iron heats it, solder fills it, let go in time.
--- Too early or too late: wait for it to cool and try again. A quick release gives a shiny joint (star).
+-- Soldering mini game and the "carry the board" hint. The server (SolderStation) owns the session
+-- (which contact is next, stars, the fixed board); each contact's game runs here so it feels instant.
+-- How it plays: click the glowing contact to put the iron on it. A silver drop (the melting point)
+-- wanders up and down the heat bar. Hold to lift the orange box, let go and it falls. While the drop
+-- is in the box, solder fills the contact. Never lose the drop and the joint shines (a star).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -11,6 +12,7 @@ local GuiService = game:GetService("GuiService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.SolderConfig)
+local SolderSlider = require(ReplicatedStorage.Shared.SolderSlider)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local SolderClient = {}
@@ -41,10 +43,11 @@ local C = {
 	cold = Color3.fromRGB(80, 150, 230),
 	melt = Color3.fromRGB(80, 210, 120),
 	hot = Color3.fromRGB(235, 80, 60),
+	box = Color3.fromRGB(255, 150, 50),
 	star = Color3.fromRGB(255, 210, 60),
 	button = Color3.fromRGB(46, 130, 90),
 }
-local HOT_ZONE = 0.85 -- the heat meter turns red above this (display only)
+local BOX = Config.Slider.Box
 
 local function round(item: GuiObject, radius: number?)
 	local corner = Instance.new("UICorner")
@@ -323,16 +326,6 @@ function SolderClient.start()
 	end
 	silk("OK", 0.76, 0.42, 0.17, 0.05)
 
-	local letGo = text(boardArea, "LetGo", UDim2.fromScale(0.5, 0.42), UDim2.fromScale(0.7, 0.2), t("solder.letGo"), 64)
-	letGo.AnchorPoint = Vector2.new(0.5, 0.5)
-	letGo.TextColor3 = C.star
-	letGo.ZIndex = 8
-	letGo.Visible = false
-	local letGoStroke = Instance.new("UIStroke")
-	letGoStroke.Thickness = 3
-	letGoStroke.Color = Color3.fromRGB(60, 30, 0)
-	letGoStroke.Parent = letGo
-
 	-- Tools drawn in a frame twice their length: the tool fills the top half, so the frame's centre
 	-- (where GUI rotation turns) is the tool's point.
 	local function tool(name: string, width: number, length: number, rotation: number): Frame
@@ -374,46 +367,47 @@ function SolderClient.start()
 	local wire = tool("Wire", 0.03, 0.8, -50)
 	piece(wire, "Solder", 0, 0.5, 0.45, C.solder, 2)
 
-	-- Heat meter.
-	text(panel, "HeatTitle", UDim2.fromScale(0.7, 0.19), UDim2.fromScale(0.26, 0.05), t("solder.heat"), 20)
-	local meter =
-		frame(panel, "HeatMeter", UDim2.fromScale(0.74, 0.25), UDim2.fromScale(0.07, 0.5), Color3.fromRGB(44, 52, 60))
-	round(meter, 10)
-	local function zone(name: string, from: number, to: number, color: Color3)
-		local z = frame(meter, name, UDim2.fromScale(0, 1 - to), UDim2.fromScale(1, to - from), color)
-		z.BackgroundTransparency = 0.7
-	end
-	zone("Cold", 0, Config.MeltHeat, C.cold)
-	zone("Melt", Config.MeltHeat, HOT_ZONE, C.melt)
-	zone("Hot", HOT_ZONE, 1, C.hot)
-	local heat = frame(meter, "Heat", UDim2.fromScale(0.2, 1), UDim2.fromScale(0.6, 0), C.cold)
-	heat.AnchorPoint = Vector2.new(0, 1)
-	round(heat, 6)
-	local function zoneLabel(key: string, y: number, color: Color3)
-		local l = text(
-			panel,
-			key,
-			UDim2.fromScale(0.82, 0.25 + 0.5 * (1 - y) - 0.025),
-			UDim2.fromScale(0.15, 0.05),
-			t(key),
-			16
-		)
-		l.TextColor3 = color
-		l.TextXAlignment = Enum.TextXAlignment.Left
-	end
-	zoneLabel("solder.zone.hot", (1 + HOT_ZONE) / 2, C.hot)
-	zoneLabel("solder.zone.melt", (Config.MeltHeat + HOT_ZONE) / 2, C.melt)
-	zoneLabel("solder.zone.cold", Config.MeltHeat / 2, C.cold)
-
-	-- Solder fill bar under the board.
-	text(panel, "FillTitle", UDim2.fromScale(0.04, 0.76), UDim2.fromScale(0.16, 0.05), t("solder.fill"), 18)
-	local fillTrack =
-		frame(panel, "FillTrack", UDim2.fromScale(0.21, 0.775), UDim2.fromScale(0.45, 0.03), Color3.fromRGB(44, 52, 60))
+	-- The heat bar: the orange box (the iron) and the silver drop (the melting point).
+	text(panel, "HeatTitle", UDim2.fromScale(0.69, 0.13), UDim2.fromScale(0.16, 0.05), t("solder.heat"), 20)
+	local bar = frame(panel, "HeatBar", UDim2.fromScale(0.71, 0.19), UDim2.fromScale(0.11, 0.58), Color3.new(1, 1, 1))
+	round(bar, 10)
+	local barGradient = Instance.new("UIGradient")
+	barGradient.Color = ColorSequence.new(Color3.fromRGB(235, 90, 60), Color3.fromRGB(60, 110, 200))
+	barGradient.Rotation = 90
+	barGradient.Transparency = NumberSequence.new(0.55)
+	barGradient.Parent = bar
+	local barRim = Instance.new("UIStroke")
+	barRim.Color, barRim.Thickness = Color3.fromRGB(70, 82, 96), 3
+	barRim.Parent = bar
+	local heatBox = frame(bar, "Box", UDim2.fromScale(0.06, 1 - BOX), UDim2.fromScale(0.88, BOX), C.box)
+	heatBox.BackgroundTransparency = 0.45
+	heatBox.ZIndex = 2
+	round(heatBox, 8)
+	local boxRim = Instance.new("UIStroke")
+	boxRim.Color, boxRim.Thickness = C.box, 3
+	boxRim.Parent = heatBox
+	local drop = frame(bar, "Drop", UDim2.fromScale(0.5, 0.5), UDim2.fromScale(0.55, 0.55), C.solder)
+	drop.AnchorPoint = Vector2.new(0.5, 0.5)
+	drop.SizeConstraint = Enum.SizeConstraint.RelativeXX
+	drop.ZIndex = 3
+	round(drop)
+	local dropShade = Instance.new("UIGradient")
+	dropShade.Color = ColorSequence.new(C.solderLight, C.solderDark)
+	dropShade.Rotation = 45
+	dropShade.Parent = drop
+	local dropShine = frame(drop, "Shine", UDim2.fromScale(0.25, 0.2), UDim2.fromScale(0.3, 0.3), Color3.new(1, 1, 1))
+	dropShine.ZIndex = 4
+	round(dropShine)
+	-- Solder progress beside the bar.
+	local fillTrack = frame(panel, "FillTrack", UDim2.fromScale(0.85, 0.19), UDim2.fromScale(0.035, 0.58), C.panel)
+	fillTrack.BackgroundColor3 = Color3.fromRGB(44, 52, 60)
 	round(fillTrack, 6)
-	local fillBar = frame(fillTrack, "Fill", UDim2.fromScale(0, 0), UDim2.fromScale(0, 1), C.solder)
+	local fillBar = frame(fillTrack, "Fill", UDim2.fromScale(0, 1), UDim2.fromScale(1, 0), C.melt)
+	fillBar.AnchorPoint = Vector2.new(0, 1)
 	round(fillBar, 6)
+	text(panel, "FillTitle", UDim2.fromScale(0.82, 0.78), UDim2.fromScale(0.1, 0.04), t("solder.fill"), 16)
 
-	local status = text(panel, "Status", UDim2.fromScale(0.04, 0.83), UDim2.fromScale(0.92, 0.07), "", 28)
+	local status = text(panel, "Status", UDim2.fromScale(0.04, 0.82), UDim2.fromScale(0.92, 0.07), "", 28)
 	local hint = text(panel, "Hint", UDim2.fromScale(0.04, 0.91), UDim2.fromScale(0.92, 0.05), t("solder.hint"), 16)
 	hint.TextColor3 = C.dim
 	local actionButton =
@@ -457,45 +451,44 @@ function SolderClient.start()
 	local joints = 0
 	local joint = 0
 	local phase = ""
-	local perfect = 0
 	local pads: { TextButton } = {}
 	local beads: { Frame } = {}
 	local shades: { UIGradient } = {}
 	local traces: { GuiObject } = {} -- traces and pad labels, rebuilt for each board
-	local holding = false
-	local heldInput: InputObject? = nil
-	local heartbeat = 0
+	local sim: SolderSlider.State? = nil -- the contact being played now
+	local waiting = false -- a finished contact was sent; wait for the server's next state
+	local pressed: { [any]: boolean } = {} -- inputs that hold the box up right now
 	local puffClock = 0
 	local previousMouse = false
 	local blink = 0
 
-	local function release()
-		local was = holding
-		holding, heldInput = false, nil
+	local function holdingDown(): boolean
+		return next(pressed) ~= nil
+	end
+
+	local function stopTools()
 		iron.Visible = false
 		wire.Visible = false
-		if id and was then
-			remote:FireServer(id, "release")
-		end
 	end
 
-	local function canHold(): boolean
+	local function canStart(): boolean
 		return panel.Visible
 			and not howTo.Visible
+			and sim == nil
+			and not waiting
+			and phase == "aim"
 			and joint >= 1
 			and joint <= joints
-			and phase ~= "retry"
-			and phase ~= "cool"
-			and phase ~= "test"
-			and phase ~= "done"
 	end
 
-	local function hold(inputObject: InputObject?)
-		if not canHold() or not id then
+	-- Put the iron on the glowing contact and start its catch-the-drop game.
+	local function startJoint()
+		if not canStart() or not id then
 			return
 		end
-		holding, heldInput, heartbeat = true, inputObject, 0
-		remote:FireServer(id, "hold")
+		sim = SolderSlider.new(joint, math.floor(os.clock() * 1000))
+		table.clear(pressed)
+		remote:FireServer(id, "start", joint)
 		local pad = pads[joint]
 		if pad then
 			iron.Position = pad.Position
@@ -513,6 +506,17 @@ function SolderClient.start()
 			table.clear(list)
 		end
 		table.clear(shades)
+	end
+
+	local function setBead(i: number, size: number, dull: boolean)
+		local bead = beads[i]
+		bead.Size = UDim2.fromScale(size, size)
+		bead.Visible = size > 0
+		shades[i].Color = ColorSequence.new(C.solderLight, if dull then C.solderDull else C.solderDark)
+		local shine = bead:FindFirstChild("Shine") :: Frame?
+		if shine then
+			shine.Visible = not dull
+		end
 	end
 
 	local function buildBoard(padSpots: { Vector2 })
@@ -605,15 +609,9 @@ function SolderClient.start()
 			table.insert(beads, bead)
 			table.insert(shades, shade)
 
-			pad.InputBegan:Connect(function(inputObject)
-				local kind = inputObject.UserInputType
-				if (kind == Enum.UserInputType.MouseButton1 or kind == Enum.UserInputType.Touch) and i == joint then
-					hold(inputObject)
-				end
-			end)
-			pad.MouseLeave:Connect(function()
-				if holding and heldInput and heldInput.UserInputType == Enum.UserInputType.MouseButton1 then
-					release()
+			pad.Activated:Connect(function()
+				if i == joint then
+					startJoint()
 				end
 			end)
 
@@ -662,7 +660,9 @@ function SolderClient.start()
 		if not panel.Visible then
 			return
 		end
-		release()
+		stopTools()
+		sim, waiting = nil, false
+		table.clear(pressed)
 		panel.Visible = false
 		id = nil
 		Input.MouseIconEnabled = previousMouse
@@ -688,15 +688,16 @@ function SolderClient.start()
 	end)
 
 	local statusColor = {
-		cold = C.text,
-		heat = C.cold,
-		flow = C.melt,
-		release = C.star,
-		cool = C.cold,
-		retry = C.hot,
+		aim = C.text,
+		play = C.melt,
+		slip = C.hot,
 		test = C.melt,
 		done = C.star,
 	}
+	local function setStatus(key: string, color: Color3)
+		status.Text = t(key)
+		status.TextColor3 = color
+	end
 
 	local function starsText(n: number): string
 		return string.rep("★", n) .. string.rep("☆", 3 - n)
@@ -717,7 +718,7 @@ function SolderClient.start()
 			panel.Visible = true
 			title.Text = t("solder.title", { machine = t("solder.board." .. state.kind) })
 			buildBoard(state.pads)
-			joint, perfect = 0, 0
+			joint = 0
 			for _, led in leds do
 				led.BackgroundColor3 = C.ledOff
 			end
@@ -730,36 +731,21 @@ function SolderClient.start()
 		joints = state.joints
 		Input.MouseIconEnabled = true
 
-		-- A joint was finished since the last update.
-		if joint >= 1 and state.joint > joint and pads[joint] then
-			local shiny = state.perfect > perfect
-			popup(
-				pads[joint],
-				t(if shiny then "solder.pop.shiny" else "solder.pop.ok"),
-				if shiny then C.star else C.text
-			)
-			release()
+		-- The server took the contact we finished.
+		if state.joint ~= joint then
+			sim, waiting = nil, false
+			stopTools()
 		end
 		local previousPhase = phase
-		joint, phase, perfect = state.joint, state.phase, state.perfect
-		if phase == "retry" or phase == "cool" or phase == "test" or phase == "done" then
-			release()
-		end
+		joint, phase = state.joint, state.phase
+		fillBar.Size = UDim2.fromScale(1, 0)
 
-		heat.Size = UDim2.fromScale(0.6, state.heat)
-		heat.BackgroundColor3 = if state.heat >= HOT_ZONE
-			then C.hot
-			elseif state.heat >= Config.MeltHeat then C.melt
-			else C.cold
-		fillBar.Size = UDim2.fromScale(if joint <= joints then state.fill else 1, 1)
-
-		local key = "solder.phase." .. phase
-		if phase == "retry" then
-			key = if state.reason == "hot" then "solder.phase.retryHot" else "solder.phase.retryEarly"
+		if phase == "done" then
+			status.Text = t("solder.phase.done", { stars = starsText(state.stars) })
+			status.TextColor3 = C.star
+		else
+			setStatus("solder.phase." .. phase, statusColor[phase] or C.text)
 		end
-		status.Text = if phase == "done" then t("solder.phase.done", { stars = starsText(state.stars) }) else t(key)
-		status.TextColor3 = statusColor[phase] or C.text
-		letGo.Visible = phase == "release"
 		actionButton.Visible = phase == "test" or phase == "done"
 		-- Leave room for the button on the right.
 		status.Size = UDim2.fromScale(if actionButton.Visible then 0.62 else 0.92, 0.07)
@@ -778,19 +764,12 @@ function SolderClient.start()
 
 		for i, pad in pads do
 			local finished = i < joint
-			local current = i == joint
 			local shiny = state.shiny[i] == true
-			pad.BackgroundColor3 = if current and not finished then C.glow else C.tin
-			-- The dome grows from the lead to a little past the ring. A quick release leaves it shiny.
-			local bead = beads[i]
-			local size = if finished then 1.08 elseif current then 0.3 + state.fill * 0.78 else 0
-			bead.Size = UDim2.fromScale(size, size)
-			bead.Visible = finished or (current and state.fill > 0)
-			local dull = finished and not shiny
-			shades[i].Color = ColorSequence.new(C.solderLight, if dull then C.solderDull else C.solderDark)
-			local shine = bead:FindFirstChild("Shine") :: Frame?
-			if shine then
-				shine.Visible = not dull
+			pad.BackgroundColor3 = if i == joint then C.glow else C.tin
+			if finished then
+				setBead(i, 1.08, not shiny)
+			elseif i ~= joint then
+				setBead(i, 0, false)
 			end
 			local step = dots[i]
 			if step then
@@ -798,54 +777,57 @@ function SolderClient.start()
 				step.TextColor3 = if finished and shiny then C.star else C.text
 				step.BackgroundColor3 = if finished
 					then C.button
-					elseif current then Color3.fromRGB(150, 110, 40)
+					elseif i == joint then Color3.fromRGB(150, 110, 40)
 					else Color3.fromRGB(50, 60, 70)
 			end
 		end
 	end)
 
-	-- Keyboard / gamepad: hold Space or A for the glowing contact.
+	-- Holding: mouse button, a finger on the screen, Space or gamepad A. The first press on a
+	-- glowing contact (or Space / A) starts it; after that every press lifts the box.
+	local function isHoldInput(inputObject: InputObject): boolean
+		local kind = inputObject.UserInputType
+		return kind == Enum.UserInputType.MouseButton1
+			or kind == Enum.UserInputType.Touch
+			or inputObject.KeyCode == Enum.KeyCode.Space
+			or inputObject.KeyCode == Enum.KeyCode.ButtonA
+	end
 	Input.InputBegan:Connect(function(inputObject, processed)
 		if not panel.Visible then
 			return
 		end
 		if inputObject.KeyCode == Enum.KeyCode.Escape and not processed then
 			sendClose()
-		elseif inputObject.KeyCode == Enum.KeyCode.Space or inputObject.KeyCode == Enum.KeyCode.ButtonA then
-			if howTo.Visible then
-				howTo.Visible = false
-			else
-				hold(inputObject)
-			end
+			return
+		end
+		if not isHoldInput(inputObject) then
+			return
+		end
+		local key = inputObject.KeyCode
+		if howTo.Visible and (key == Enum.KeyCode.Space or key == Enum.KeyCode.ButtonA) then
+			howTo.Visible = false
+		elseif sim then
+			pressed[inputObject] = true
+		elseif key == Enum.KeyCode.Space or key == Enum.KeyCode.ButtonA then
+			startJoint()
 		end
 	end)
 	Input.InputEnded:Connect(function(inputObject)
-		if
-			holding
-			and (
-				inputObject == heldInput
-				or inputObject.UserInputType == Enum.UserInputType.MouseButton1
-				or inputObject.KeyCode == Enum.KeyCode.Space
-				or inputObject.KeyCode == Enum.KeyCode.ButtonA
-			)
-		then
-			release()
-		end
-	end)
-	Input.InputChanged:Connect(function(inputObject)
-		if holding and inputObject == heldInput and inputObject.UserInputType == Enum.UserInputType.Touch then
-			local pad = pads[joint]
-			if not pad then
-				return
-			end
-			local p, size = pad.AbsolutePosition, pad.AbsoluteSize
-			local x, y = inputObject.Position.X, inputObject.Position.Y
-			if x < p.X or x > p.X + size.X or y < p.Y or y > p.Y + size.Y then
-				release()
+		pressed[inputObject] = nil
+		-- Mouse and keys can end on a different InputObject: clear by kind too.
+		for held in pressed do
+			if
+				held.UserInputType == inputObject.UserInputType
+				and held.KeyCode == inputObject.KeyCode
+				and inputObject.UserInputType ~= Enum.UserInputType.Touch
+			then
+				pressed[held] = nil
 			end
 		end
 	end)
-	Input.WindowFocusReleased:Connect(release)
+	Input.WindowFocusReleased:Connect(function()
+		table.clear(pressed)
+	end)
 
 	RunService.RenderStepped:Connect(function(dt)
 		if not panel.Visible then
@@ -856,22 +838,40 @@ function SolderClient.start()
 		if pad then
 			local ring = pad:FindFirstChild("Ring") :: UIStroke?
 			if ring then
-				ring.Thickness = if canHold() then 3 + math.sin(blink * 6) * 2 else 0
+				ring.Thickness = if canStart() then 3 + math.sin(blink * 6) * 2 else 0
 			end
 		end
-		letGo.Rotation = math.sin(blink * 18) * 4
-		if holding and id then
-			heartbeat += dt
-			if heartbeat >= 0.2 then
-				heartbeat = 0
-				remote:FireServer(id, "hold")
-			end
-			ironTip.BackgroundColor3 = if phase == "flow" or phase == "release" then C.hot else C.tipCold
-			puffClock += dt
-			if pad and (phase == "flow" or phase == "release") and puffClock >= 0.15 then
-				puffClock = 0
-				puff(pad)
-			end
+		local contact = sim
+		if not contact then
+			heatBox.Position = UDim2.fromScale(0.06, 1 - BOX)
+			drop.Visible = false
+			return
+		end
+		SolderSlider.step(contact, math.min(dt, 0.1), holdingDown())
+		drop.Visible = true
+		heatBox.Position = UDim2.fromScale(0.06, 1 - BOX - contact.box)
+		drop.Position = UDim2.fromScale(0.5, 1 - contact.drop)
+		heatBox.BackgroundTransparency = if contact.inside then 0.25 else 0.6
+		fillBar.Size = UDim2.fromScale(1, contact.fill)
+		ironTip.BackgroundColor3 = if contact.inside then C.hot else C.tipCold
+		setBead(joint, if contact.fill > 0 then 0.3 + contact.fill * 0.78 else 0, false)
+		if contact.inside then
+			setStatus("solder.phase.play", statusColor.play)
+		elseif contact.caught then
+			setStatus("solder.phase.slip", statusColor.slip)
+		end
+		puffClock += dt
+		if pad and contact.inside and puffClock >= 0.15 then
+			puffClock = 0
+			puff(pad)
+		end
+		if contact.done and id and not waiting then
+			waiting = true
+			local shiny = SolderSlider.shiny(contact)
+			popup(pad, t(if shiny then "solder.pop.shiny" else "solder.pop.ok"), if shiny then C.star else C.text)
+			setBead(joint, 1.08, not shiny)
+			remote:FireServer(id, "joint", joint, shiny)
+			stopTools()
 		end
 	end)
 
