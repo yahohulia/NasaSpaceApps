@@ -123,6 +123,14 @@ local function putInBagView(player: Player, sample: Instance): Instance
 	return copy
 end
 
+-- Tells the mission director (MissionDirector) that a rock sample was picked up (any rock or meteorite).
+local function sampleCollected(player: Player)
+	local event = ServerStorage:FindFirstChild("MB_ObjectiveDone")
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, "sample")
+	end
+end
+
 local function bindSample(sample: Instance)
 	local kind = sample:GetAttribute("SampleKind")
 	if typeof(kind) ~= "string" or sample:GetAttribute("Collected") == true then
@@ -162,6 +170,7 @@ local function bindSample(sample: Instance)
 		table.insert(bag, { key = key, view = putInBagView(player, sample) })
 		player:SetAttribute("BagSamples", n + 1)
 		sample:Destroy()
+		sampleCollected(player)
 		notify:FireClient(player, "craft.toast.picked", { n = n + 1 + crops, max = CraftConfig.BagSize })
 		firstPickup(player)
 	end)

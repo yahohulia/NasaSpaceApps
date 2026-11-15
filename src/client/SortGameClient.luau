@@ -67,7 +67,8 @@ function SortGameClient.start()
 		end
 	end
 
-	-- Panel at the top of the screen ------------------------------------------------------
+	-- A slim strip near the bottom (above the bag): samples left + right/wrong messages. No rules text
+	-- and nothing at the top, so the boxes stay fully visible. "Stop" sits in the top-right corner.
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "SortGame"
 	gui.ResetOnSpawn = false
@@ -76,11 +77,11 @@ function SortGameClient.start()
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	local panel = Instance.new("Frame")
-	panel.AnchorPoint = Vector2.new(0.5, 0)
-	panel.Position = UDim2.new(0.5, 0, 0, 12)
-	panel.Size = UDim2.fromOffset(640, 128)
+	panel.AnchorPoint = Vector2.new(0.5, 1)
+	panel.Position = UDim2.new(0.5, 0, 1, -118)
+	panel.Size = UDim2.fromOffset(560, 64)
 	panel.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
-	panel.BackgroundTransparency = 0.12
+	panel.BackgroundTransparency = 0.3
 	panel.Parent = gui
 	local panelCorner = Instance.new("UICorner")
 	panelCorner.CornerRadius = UDim.new(0, 10)
@@ -103,16 +104,17 @@ function SortGameClient.start()
 		return l
 	end
 
-	local title = label(22, UDim2.fromOffset(16, 8), UDim2.new(1, -170, 0, 28), Color3.fromRGB(255, 220, 120))
+	local title = label(16, UDim2.fromOffset(14, 6), UDim2.new(1, -170, 0, 20), Color3.fromRGB(255, 220, 120))
 	title.Font = Enum.Font.GothamBold
-	title.Text = t("craft.sort.title")
-	local message = label(18, UDim2.fromOffset(16, 38), UDim2.new(1, -32, 0, 44), TEXT)
+	title.Text = ""
+	local message = label(16, UDim2.fromOffset(14, 28), UDim2.new(1, -170, 0, 30), TEXT)
 	message.Font = Enum.Font.GothamBold
-	local info = label(15, UDim2.fromOffset(16, 88), UDim2.new(1, -32, 0, 32), DIM_TEXT)
+	local info = label(15, UDim2.fromOffset(14, 28), UDim2.new(1, -28, 0, 30), DIM_TEXT)
+	info.Visible = false -- the rules / key hint text covered the boxes; the boxes are numbered on the table
 
 	local stop = Instance.new("TextButton")
-	stop.AnchorPoint = Vector2.new(1, 0)
-	stop.Position = UDim2.new(1, -12, 0, 8)
+	stop.AnchorPoint = Vector2.new(1, 0.5)
+	stop.Position = UDim2.new(1, -12, 0.5, 0)
 	stop.Size = UDim2.fromOffset(130, 32)
 	stop.BackgroundColor3 = Color3.fromRGB(44, 52, 74)
 	stop.Font = Enum.Font.GothamBold
@@ -498,7 +500,7 @@ function SortGameClient.start()
 			end
 			sample = makeSample(data.item)
 			setInfo()
-			title.Text = t("craft.sort.title") .. "  ·  " .. t("craft.sort.left", { n = data.left or 0 })
+			title.Text = t("craft.sort.left", { n = data.left or 0 })
 			waiting = false
 		elseif state == "wrong" then
 			message.Text = t("craft.sort.wrong." .. tostring(data.kind))
