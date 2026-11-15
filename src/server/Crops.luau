@@ -1,10 +1,15 @@
 --!strict
 -- Greenhouse crops: seeds from the crate in the storage room, planting on the plant racks, growth,
--- care and harvest. The server owns all of it; CropClient only shows it.
+-- care, harvest and eating. The server owns all of it; CropClient and CraftClient only show it.
 --
 -- Built in Studio (Workspace, not Rojo): the seed crate (a part tagged SeedCrate inside a Model with
 -- Attachments Slot1..SlotN), the racks (Workspace.Greenhouse_PlantRacks.PlantRack_*), and the
 -- journal board (a part tagged CropJournal).
+--
+-- Inventory: Player.CropBag (Folder) holds the crop items, each a StringValue (they share the
+-- CraftConfig.BagSize places of the bag with the rock samples):
+--   Name "Seed" or "Produce", Value = crop id, attributes Order (pickup order) and Food (produce).
+-- CraftClient shows them in the inventory bar next to the samples.
 --
 -- Care: at the crop's care points a rack gets NeedsCare = true. The teammate's Studio script
 -- FarmMinigameServer lights up only those racks and sets NeedsCare = false after a won mini game.
@@ -12,11 +17,14 @@
 -- Without FarmMinigameServer (no ReplicatedStorage.FarmMinigameRemote) racks never ask for care.
 --
 -- Rack attributes (replicated, CropClient reads them): Crop, Growth, Health, Ready, NeedsCare.
--- Player attribute CarrySeed = crop id while the player carries a seed packet.
 -- Shared stats: ReplicatedStorage.CropStats attributes <id>_Harvests, _Seconds, _Food, _Best.
+-- Remote CropPick: server -> client "open" (crate picker), "plant" {rack, kinds} (which seed?);
+-- client -> server "take" id, "plant" rack id, "eat".
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local CropConfig = require(ReplicatedStorage.Shared.CropConfig)
 local CropModels = require(ReplicatedStorage.Shared.CropModels)
 local Strings = require(ReplicatedStorage.Shared.Strings)
@@ -40,11 +48,13 @@ type Rack = {
 }
 
 local racks: { Rack } = {}
+local byModel: { [Model]: Rack } = {}
 local notify: RemoteEvent -- CraftNotify (toasts; CraftClient translates crop ids in vars)
-local pickRemote: RemoteEvent -- CropPick: crate picker
+local pickRemote: RemoteEvent -- CropPick
 local stats: Folder
 local crates: { BasePart } = {}
 local rng = Random.new()
+local order = 0
 
 local function num(inst: Instance, key: string): number
 	local v = inst:GetAttribute(key)
@@ -60,9 +70,61 @@ local function careAvailable(): boolean
 	return ReplicatedStorage:FindFirstChild("FarmMinigameRemote") ~= nil
 end
 
+local function rootOf(player: Player): BasePart?
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return if root and root:IsA("BasePart") then root else nil
+end
+
+-- Crop bag -------------------------------------------------------------------------------------------
+
+local function bagOf(player: Player): Folder
+	local existing = player:FindFirstChild("CropBag")
+	if existing and existing:IsA("Folder") then
+		return existing
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "CropBag"
+	folder.Parent = player
+	return folder
+end
+
+-- Items of one kind ("Seed" / "Produce"), oldest first.
+local function items(player: Player, kind: string?): { StringValue }
+	local list = {}
+	for _, item in bagOf(player):GetChildren() do
+		if item:IsA("StringValue") and (kind == nil or item.Name == kind) then
+			table.insert(list, item)
+		end
+	end
+	table.sort(list, function(a, b)
+		return num(a, "Order") < num(b, "Order")
+	end)
+	return list
+end
+
+local function addItem(player: Player, kind: string, id: string, food: number?): boolean
+	-- one bag for everything: rock samples (Crafting) and crop items share CraftConfig.BagSize places
+	local samples = player:GetAttribute("BagSamples")
+	local used = #items(player) + (if typeof(samples) == "number" then samples else 0)
+	if used >= CraftConfig.BagSize then
+		return false
+	end
+	order += 1
+	local item = Instance.new("StringValue")
+	item.Name = kind
+	item.Value = id
+	item:SetAttribute("Order", order)
+	if food then
+		item:SetAttribute("Food", food)
+	end
+	item.Parent = bagOf(player)
+	return true
+end
+
 -- Plant models --------------------------------------------------------------------------------------
 
-local VISUAL_STEPS = 20 -- rebuild the plant models every 5 % of growth
+local VISUAL_STEPS = 10 -- rebuild the plant models every 10 % of growth (each rebuild is ~300 parts)
 
 local function plantSpots(rack: Rack): { CFrame }
 	local spots = {}
@@ -113,13 +175,43 @@ local function addStats(crop: string, seconds: number, food: number)
 	stats:SetAttribute(crop .. "_Best", math.max(num(stats, crop .. "_Best"), food))
 end
 
--- Planting and harvest ------------------------------------------------------------------------------
+-- Planting, harvest, eating ---------------------------------------------------------------------------
 
-local function plant(rack: Rack, player: Player)
-	local id = player:GetAttribute("CarrySeed")
-	local crop = if typeof(id) == "string" then CropConfig.get(id) else nil
-	if not crop then
+-- Plants seed `id` (or, without `id`, the only kind of seed the player carries). With several kinds
+-- the client is asked which one, and plants through the remote.
+local function plant(rack: Rack, player: Player, id: string?)
+	if rack.crop ~= nil then
+		return
+	end
+	local seeds = items(player, "Seed")
+	if #seeds == 0 then
 		notify:FireClient(player, "crop.toast.no_seeds")
+		return
+	end
+	if not id then
+		local kinds: { string } = {}
+		local seen: { [string]: boolean } = {}
+		for _, item in seeds do
+			if not seen[item.Value] then
+				seen[item.Value] = true
+				table.insert(kinds, item.Value)
+			end
+		end
+		if #kinds > 1 then
+			pickRemote:FireClient(player, "plant", { rack = rack.model, kinds = kinds })
+			return
+		end
+		id = kinds[1]
+	end
+	local packet: StringValue? = nil
+	for _, item in seeds do
+		if item.Value == id then
+			packet = item
+			break
+		end
+	end
+	local crop = if id then CropConfig.get(id) else nil
+	if not (packet and crop) then
 		return
 	end
 	local water = player:GetAttribute("Water")
@@ -131,7 +223,7 @@ local function plant(rack: Rack, player: Player)
 		end
 		player:SetAttribute("Water", water - cost)
 	end
-	player:SetAttribute("CarrySeed", nil)
+	packet:Destroy()
 	rack.crop = crop.id
 	rack.growth = 0
 	rack.health = 1
@@ -156,9 +248,9 @@ local function harvest(rack: Rack, player: Player)
 		return
 	end
 	local food = math.max(1, math.floor(crop.food * rack.health + 0.5))
-	local have = player:GetAttribute("Food")
-	if typeof(have) == "number" then
-		player:SetAttribute("Food", math.clamp(have + food, 0, 100))
+	if not addItem(player, "Produce", crop.id, food) then
+		notify:FireClient(player, "crop.toast.bag_full_harvest")
+		return
 	end
 	addStats(crop.id, os.clock() - rack.plantedAt, food)
 	rack.crop = nil
@@ -170,6 +262,21 @@ local function harvest(rack: Rack, player: Player)
 	redraw(rack)
 	publish(rack)
 	notify:FireClient(player, "crop.toast.harvested", { crop = crop.id, food = food })
+end
+
+local function eat(player: Player)
+	local item = items(player, "Produce")[1]
+	if not item then
+		return
+	end
+	local food = num(item, "Food")
+	local have = player:GetAttribute("Food")
+	if typeof(have) == "number" then
+		player:SetAttribute("Food", math.clamp(have + food, 0, 100))
+	end
+	local id = item.Value
+	item:Destroy()
+	notify:FireClient(player, "crop.toast.ate", { crop = id, food = food })
 end
 
 -- Growth --------------------------------------------------------------------------------------------
@@ -260,11 +367,12 @@ local function bindRack(model: Model)
 		shownStep = -1,
 	}
 	table.insert(racks, rack)
+	byModel[model] = rack
 	model:SetAttribute(CropConfig.CareAttribute, false)
 
 	prompt.Triggered:Connect(function(player)
 		if rack.crop == nil then
-			plant(rack, player)
+			plant(rack, player, nil)
 		elseif rack.growth >= 1 then
 			harvest(rack, player)
 		end
@@ -281,9 +389,8 @@ local function bindRack(model: Model)
 end
 
 local function nearCrate(player: Player): boolean
-	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart")
-	if not (root and root:IsA("BasePart")) then
+	local root = rootOf(player)
+	if not root then
 		return false
 	end
 	for _, crate in crates do
@@ -294,7 +401,7 @@ local function nearCrate(player: Player): boolean
 	return false
 end
 
--- A small packet and a little grown plant in each crate slot, so kids see what each seed becomes.
+-- A seed packet and a little grown plant in each crate slot, so kids see what each seed becomes.
 local function fillCrate(crate: BasePart)
 	local model = crate:FindFirstAncestorOfClass("Model")
 	if not model or model:FindFirstChild("CrateDisplay") then
@@ -310,23 +417,9 @@ local function fillCrate(crate: BasePart)
 			local plantModel = CropModels.build(crop.id, 1, i * 31, 0.62)
 			plantModel:PivotTo(base * CFrame.new(0.18, 0, 0))
 			plantModel.Parent = display
-			local packet = Instance.new("Part")
-			packet.Name = "SeedPacket_" .. crop.id
-			packet.Anchored = true
-			packet.CanCollide = false
-			packet.CanQuery = false
-			packet.CastShadow = false
-			packet.Size = Vector3.new(0.42, 0.56, 0.04)
-			packet.Color = crop.color
-			packet.Material = Enum.Material.SmoothPlastic
-			packet.CFrame = base * CFrame.new(-0.28, 0.3, 0) * CFrame.Angles(math.rad(-12), math.rad(90), 0)
+			local packet = CropModels.packet(crop.id)
+			packet:PivotTo(base * CFrame.new(-0.28, 0.02, 0) * CFrame.Angles(math.rad(-12), math.rad(90), 0))
 			packet.Parent = display
-			local band = packet:Clone()
-			band.Name = "PacketBand"
-			band.Size = Vector3.new(0.43, 0.12, 0.045)
-			band.Color = Color3.fromRGB(245, 242, 232)
-			band.CFrame = packet.CFrame * CFrame.new(0, 0.18, 0)
-			band.Parent = display
 		end
 	end
 end
@@ -362,6 +455,30 @@ local function remoteEvent(name: string): RemoteEvent
 	return r
 end
 
+local function onPick(player: Player, action: unknown, a: unknown, b: unknown)
+	if action == "take" then
+		if typeof(a) ~= "string" or not CropConfig.get(a) or not nearCrate(player) then
+			return
+		end
+		if addItem(player, "Seed", a) then
+			notify:FireClient(player, "crop.toast.took", { crop = a })
+		else
+			notify:FireClient(player, "crop.toast.bag_full")
+		end
+	elseif action == "plant" then
+		if typeof(a) ~= "Instance" or not a:IsA("Model") or typeof(b) ~= "string" then
+			return
+		end
+		local rack = byModel[a]
+		local root = rootOf(player)
+		if rack and root and (rack.frame.Position - root.Position).Magnitude <= CropConfig.PromptDistance + 4 then
+			plant(rack, player, b)
+		end
+	elseif action == "eat" then
+		eat(player)
+	end
+end
+
 function Crops.start()
 	notify = remoteEvent("CraftNotify")
 	pickRemote = remoteEvent("CropPick")
@@ -382,16 +499,11 @@ function Crops.start()
 		end
 	end
 
-	pickRemote.OnServerEvent:Connect(function(player, action: unknown, id: unknown)
-		if action ~= "take" or typeof(id) ~= "string" or not CropConfig.get(id) then
-			return
-		end
-		if not nearCrate(player) then
-			return
-		end
-		player:SetAttribute("CarrySeed", id)
-		notify:FireClient(player, "crop.toast.took", { crop = id })
-	end)
+	pickRemote.OnServerEvent:Connect(onPick)
+	Players.PlayerAdded:Connect(bagOf)
+	for _, player in Players:GetPlayers() do
+		bagOf(player)
+	end
 
 	for _, inst in CollectionService:GetTagged(CropConfig.SeedCrateTag) do
 		bindCrate(inst)
