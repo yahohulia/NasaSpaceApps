@@ -1,7 +1,7 @@
 --!strict
 -- Greenhouse crops on the client (server: Crops.luau). Read-only view:
 --  * the seed crate picker (6 crops with a 3D model, NASA days and food),
---  * a "Seeds: <crop>" chip while the player carries a packet,
+--  * the "Eat" button (key G) for harvest in the crop bag (the bag itself is in CraftClient),
 --  * labels over planted racks (growth, "needs care", "ready"),
 --  * the greenhouse journal board: which crop grows best on our Mars base,
 --  * prompt texts in the player's language.
@@ -63,7 +63,11 @@ function CropClient.start()
 
 	-- Spinning 3D models in viewports --------------------------------------------------------
 	local spinning: { Model } = {}
+	local spinOn = false -- only while the picker is open: six 3D plants every frame cost a lot
 	RunService.RenderStepped:Connect(function()
+		if not spinOn then
+			return
+		end
 		local rot = CFrame.Angles(0, os.clock() * 0.7, 0)
 		for _, m in spinning do
 			if m.Parent then
@@ -144,8 +148,14 @@ function CropClient.start()
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	layout.Parent = grid
 
+	local pickMode = "take" -- "take": all crops from the crate; "plant": the seeds in the bag
+	local pickRack: Instance? = nil
+	local cards: { [string]: TextButton } = {}
+
 	local function closePicker()
 		pickGui.Enabled = false
+		spinOn = false
+		pickRack = nil
 		UserInputService.MouseIconEnabled = false -- first person hides the cursor
 	end
 
@@ -190,9 +200,16 @@ function CropClient.start()
 		care.TextYAlignment = Enum.TextYAlignment.Top
 		care.Text = t("crop.pick.care", { n = #crop.carePoints })
 		card.Activated:Connect(function()
-			pick:FireServer("take", crop.id)
+			if pickMode == "plant" then
+				if pickRack then
+					pick:FireServer("plant", pickRack, crop.id)
+				end
+			else
+				pick:FireServer("take", crop.id)
+			end
 			closePicker()
 		end)
+		cards[crop.id] = card
 	end
 
 	local note = label(win, 14, DIM)
@@ -215,10 +232,28 @@ function CropClient.start()
 	corner(close, 6)
 	close.Activated:Connect(closePicker)
 
-	pick.OnClientEvent:Connect(function(action: string)
+	local function openPicker(mode: string, kinds: { string }?)
+		pickMode = mode
+		local allowed: { [string]: boolean } = {}
+		for _, id in kinds or {} do
+			allowed[id] = true
+		end
+		for id, card in cards do
+			card.Visible = kinds == nil or allowed[id] == true
+		end
+		title.Text = if mode == "plant" then t("crop.pick.plantTitle") else t("crop.pick.title")
+		pickGui.Enabled = true
+		spinOn = true
+		UserInputService.MouseIconEnabled = true
+	end
+
+	pick.OnClientEvent:Connect(function(action: string, data: any)
 		if action == "open" then
-			pickGui.Enabled = true
-			UserInputService.MouseIconEnabled = true
+			pickRack = nil
+			openPicker("take", nil)
+		elseif action == "plant" and typeof(data) == "table" then
+			pickRack = data.rack
+			openPicker("plant", data.kinds)
 		end
 	end)
 	UserInputService.InputBegan:Connect(function(input)
@@ -227,55 +262,92 @@ function CropClient.start()
 		end
 	end)
 
-	-- "Seeds: <crop>" chip -------------------------------------------------------------------
-	local chipGui = Instance.new("ScreenGui")
-	chipGui.Name = "CropCarry"
-	chipGui.ResetOnSpawn = false
-	chipGui.Parent = playerGui
-	local chip = Instance.new("Frame")
-	chip.AnchorPoint = Vector2.new(1, 1)
-	chip.Position = UDim2.new(1, -16, 1, -16)
-	chip.Size = UDim2.fromOffset(0, 34)
-	chip.AutomaticSize = Enum.AutomaticSize.X
-	chip.BackgroundColor3 = Color3.fromRGB(22, 26, 38)
-	chip.BackgroundTransparency = 0.15
-	chip.Visible = false
-	chip.Parent = chipGui
-	corner(chip, 8)
-	local chipPad = Instance.new("UIPadding")
-	chipPad.PaddingLeft = UDim.new(0, 10)
-	chipPad.PaddingRight = UDim.new(0, 12)
-	chipPad.Parent = chip
-	local chipList = Instance.new("UIListLayout")
-	chipList.FillDirection = Enum.FillDirection.Horizontal
-	chipList.VerticalAlignment = Enum.VerticalAlignment.Center
-	chipList.Padding = UDim.new(0, 8)
-	chipList.Parent = chip
-	local dot = Instance.new("Frame")
-	dot.Size = UDim2.fromOffset(14, 18)
-	dot.Parent = chip
-	corner(dot, 3)
-	local chipText = label(chip, 16)
-	chipText.Font = Enum.Font.GothamBold
-	chipText.TextWrapped = false
-	chipText.AutomaticSize = Enum.AutomaticSize.X
-	chipText.Size = UDim2.fromOffset(0, 34)
+	-- The crop bag (Player.CropBag): seed packets and harvest. CraftClient shows them in the
+	-- inventory bar; here: the "Eat" button (key G) and which seeds the planting prompt offers.
+	local bag: Instance? = nil
+	local function bagItems(kind: string): { StringValue }
+		local list = {}
+		if bag then
+			for _, item in bag:GetChildren() do
+				if item:IsA("StringValue") and item.Name == kind then
+					table.insert(list, item)
+				end
+			end
+		end
+		table.sort(list, function(a, b)
+			local x, y = a:GetAttribute("Order"), b:GetAttribute("Order")
+			return (if typeof(x) == "number" then x else 0) < (if typeof(y) == "number" then y else 0)
+		end)
+		return list
+	end
+
+	local eatGui = Instance.new("ScreenGui")
+	eatGui.Name = "CropEat"
+	eatGui.ResetOnSpawn = false
+	eatGui.Parent = playerGui
+	local eatButton = Instance.new("TextButton")
+	eatButton.AnchorPoint = Vector2.new(1, 1)
+	eatButton.Position = UDim2.new(1, -16, 1, -16)
+	eatButton.Size = UDim2.fromOffset(0, 38)
+	eatButton.AutomaticSize = Enum.AutomaticSize.X
+	eatButton.BackgroundColor3 = Color3.fromRGB(40, 70, 46)
+	eatButton.BackgroundTransparency = 0.1
+	eatButton.Font = Enum.Font.GothamBold
+	eatButton.TextSize = 17
+	eatButton.TextColor3 = TEXT
+	eatButton.Visible = false
+	eatButton.Parent = eatGui
+	corner(eatButton, 8)
+	local eatPad = Instance.new("UIPadding")
+	eatPad.PaddingLeft = UDim.new(0, 14)
+	eatPad.PaddingRight = UDim.new(0, 14)
+	eatPad.Parent = eatButton
+	local eatStroke = Instance.new("UIStroke")
+	eatStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	eatStroke.Color = Color3.fromRGB(110, 180, 110)
+	eatStroke.Parent = eatButton
+
+	local function eat()
+		if #bagItems("Produce") > 0 then
+			pick:FireServer("eat")
+		end
+	end
+	eatButton.Activated:Connect(eat)
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if not processed and input.KeyCode == Enum.KeyCode.G then
+			eat()
+		end
+	end)
 
 	-- Prompt texts in the player's language ----------------------------------------------------
+	local function seedKinds(): { string }
+		local kinds: { string } = {}
+		local seen: { [string]: boolean } = {}
+		for _, item in bagItems("Seed") do
+			if not seen[item.Value] then
+				seen[item.Value] = true
+				table.insert(kinds, item.Value)
+			end
+		end
+		return kinds
+	end
+
 	local function relabel(prompt: ProximityPrompt)
 		local mode = prompt:GetAttribute("CropMode")
-		local carry = player:GetAttribute("CarrySeed")
-		local carrying = typeof(carry) == "string" and CropConfig.get(carry) ~= nil
 		if mode == "crate" then
 			prompt.ActionText = t("crop.prompt.take")
 			prompt.ObjectText = t("crop.object.crate")
 		elseif mode == "plant" then
-			prompt.ActionText = if carrying
-				then t("crop.prompt.plant", { crop = cropName(carry :: string) })
+			local kinds = seedKinds()
+			prompt.ActionText = if #kinds == 1
+				then t("crop.prompt.plant", { crop = cropName(kinds[1]) })
 				else t("crop.prompt.plantAny")
 			prompt.ObjectText = t("crop.object.rack")
-			-- only players with a seed packet see the planting prompt (fewer prompts in the rows)
-			prompt.Enabled = carrying
+			-- only players with seed packets see the planting prompt (fewer prompts in the rows)
+			local want = #kinds > 0
+			if prompt.Enabled ~= want then
+				prompt.Enabled = want
+			end
 		elseif mode == "harvest" then
 			prompt.ActionText = t("crop.prompt.harvest")
 			prompt.ObjectText = t("crop.object.rack")
@@ -294,11 +366,7 @@ function CropClient.start()
 			end)
 			inst:GetPropertyChangedSignal("Enabled"):Connect(function()
 				if inst:GetAttribute("CropMode") == "plant" then
-					local carry = player:GetAttribute("CarrySeed")
-					local want = typeof(carry) == "string"
-					if inst.Enabled ~= want then
-						inst.Enabled = want
-					end
+					relabel(inst)
 				end
 			end)
 			relabel(inst)
@@ -310,13 +378,11 @@ function CropClient.start()
 		end
 	end)
 
-	local function onCarry()
-		local carry = player:GetAttribute("CarrySeed")
-		local crop = if typeof(carry) == "string" then CropConfig.get(carry) else nil
-		chip.Visible = crop ~= nil
-		if crop then
-			dot.BackgroundColor3 = crop.color
-			chipText.Text = t("crop.carry", { crop = cropName(crop.id) })
+	local function onBag()
+		local produce = bagItems("Produce")
+		eatButton.Visible = #produce > 0
+		if #produce > 0 then
+			eatButton.Text = t("crop.eat", { crop = cropName(produce[1].Value) })
 		end
 		for _, prompt in prompts do
 			if prompt.Parent then
@@ -324,7 +390,15 @@ function CropClient.start()
 			end
 		end
 	end
-	player:GetAttributeChangedSignal("CarrySeed"):Connect(onCarry)
+	task.spawn(function()
+		local folder = player:WaitForChild("CropBag", 60)
+		if folder then
+			bag = folder
+			folder.ChildAdded:Connect(onBag)
+			folder.ChildRemoved:Connect(onBag)
+			onBag()
+		end
+	end)
 
 	-- Labels over planted racks --------------------------------------------------------------
 	local function rackLabel(model: Model)
@@ -532,8 +606,6 @@ function CropClient.start()
 		journal(part)
 	end
 	CollectionService:GetInstanceAddedSignal(CropConfig.JournalTag):Connect(journal)
-
-	onCarry()
 end
 
 return CropClient
