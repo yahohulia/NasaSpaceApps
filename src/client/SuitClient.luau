@@ -1,46 +1,46 @@
--- Suit locker prompts in the player's own language: "Put on suit" / "Take off suit"
--- depending on whether this player wears the suit (Player attribute "SuitOn").
+--!strict
+-- Suit locker prompt text in the player's own language: "Put on suit" while the
+-- suit is off, "Take off suit" while it is on (Server.Suit makes the prompts).
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
+local LOCKER_TAG = "SuitLocker"
+
 local SuitClient = {}
 
 function SuitClient.start()
-	local me = Players.LocalPlayer
-	local lang = Strings.langFromLocale(me.LocaleId)
+	local player = Players.LocalPlayer
+	local lang = Strings.langFromLocale(player.LocaleId)
 
-	local function label(prompt: ProximityPrompt)
-		local key = if me:GetAttribute("SuitOn") == true then "suit.prompt.take_off" else "suit.prompt.put_on"
+	local function refresh(prompt: ProximityPrompt)
+		local key = if player:GetAttribute("SuitOn") == true then "suit.prompt.take_off" else "suit.prompt.put_on"
 		prompt.ActionText = Strings.get(key, lang)
 		prompt.ObjectText = Strings.get("suit.object", lang)
 	end
 
-	local function refreshAll()
-		for _, part in CollectionService:GetTagged("SuitLocker") do
-			local prompt = part:FindFirstChild("SuitPrompt")
+	local prompts: { ProximityPrompt } = {}
+	local function bind(locker: Instance)
+		task.spawn(function()
+			local prompt = locker:WaitForChild("SuitPrompt", 30)
 			if prompt and prompt:IsA("ProximityPrompt") then
-				label(prompt)
+				table.insert(prompts, prompt)
+				refresh(prompt)
 			end
-		end
+		end)
 	end
+	for _, locker in CollectionService:GetTagged(LOCKER_TAG) do
+		bind(locker)
+	end
+	CollectionService:GetInstanceAddedSignal(LOCKER_TAG):Connect(bind)
 
-	local function watch(part: Instance)
-		local prompt = part:WaitForChild("SuitPrompt", 30)
-		if prompt and prompt:IsA("ProximityPrompt") then
-			label(prompt)
+	player:GetAttributeChangedSignal("SuitOn"):Connect(function()
+		for _, prompt in prompts do
+			refresh(prompt)
 		end
-	end
-
-	for _, part in CollectionService:GetTagged("SuitLocker") do
-		task.spawn(watch, part)
-	end
-	CollectionService:GetInstanceAddedSignal("SuitLocker"):Connect(function(part)
-		task.spawn(watch, part)
 	end)
-	me:GetAttributeChangedSignal("SuitOn"):Connect(refreshAll)
 end
 
 return SuitClient
