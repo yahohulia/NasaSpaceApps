@@ -315,4 +315,10 @@ return {
 	["crop.toast.bag_full"] = "Your bag is full. Plant seeds, eat something or sort your samples first.",
 	["crop.toast.bag_full_harvest"] = "Your bag is full. Eat something (G), then harvest.",
 	["crop.toast.ate"] = "You ate {crop}: +{food} food.",
+	["water.prompt.melt"] = "Melt ice into a bottle",
+	["water.object.melter"] = "Ice melter",
+	["water.toast.bottle"] = "The ice melted! A bottle of water is in your bag. Press {key} to drink.",
+	["water.toast.no_ice"] = "No ice to melt. Dig some ice with the drill outside.",
+	["water.toast.bag_full"] = "Your bag is full. Drink a bottle or sort your samples first.",
+	["water.drink"] = "Drink water ({n}) [{key}]",
 }

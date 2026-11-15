@@ -519,14 +519,13 @@ local handlers: { [string]: (Player, BasePart) -> () } = {
 		notify:FireClient(player, "ice_got")
 	end,
 	Drink = function(player)
-		local a = Config.Actions.Drink
-		local ice = player:GetAttribute("Ice") or 0
-		if ice < 1 then
-			notify:FireClient(player, "need_ice")
-			return
+		-- The water station is an ice melter: one piece of ice -> a bottle of water in the bag
+		-- (Server.WaterBottles; the player drinks it later with the "Drink water" button).
+		local server = script.Parent
+		local bottles = server and server:FindFirstChild("WaterBottles")
+		if bottles and bottles:IsA("ModuleScript") then
+			(require(bottles) :: any).melt(player)
 		end
-		player:SetAttribute("Ice", ice - 1)
-		player:SetAttribute("Water", clamp100((player:GetAttribute("Water") or 0) + a.Water))
 	end,
 	Harvest = function(player)
 		local a = Config.Actions.Harvest

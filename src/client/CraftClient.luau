@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 
 local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
 local CropModels = require(ReplicatedStorage.Shared.CropModels)
+local WaterBottle = require(ReplicatedStorage.Shared.WaterBottle)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local CraftClient = {}
@@ -192,6 +193,8 @@ function CraftClient.start()
 			local crop = if sample then nil else crops[i - #items]
 			if sample then
 				showInSlot(slot(i, true), sample)
+			elseif crop and crop:IsA("StringValue") and crop.Name == WaterBottle.KIND then
+				showInSlot(slot(i, true, Color3.fromRGB(26, 44, 66)), WaterBottle.model()) -- ice melter bottle
 			elseif crop and crop:IsA("StringValue") then
 				local seed = crop.Name == "Seed"
 				local tint = if seed then Color3.fromRGB(44, 40, 30) else Color3.fromRGB(32, 50, 34)

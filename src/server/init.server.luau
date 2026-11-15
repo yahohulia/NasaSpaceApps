@@ -11,6 +11,7 @@ local Radiation = require(script.Radiation)
 local SolderStation = require(script.SolderStation)
 local Sparky = require(script.Sparky)
 local Suit = require(script.Suit)
+local WaterBottles = require(script.WaterBottles)
 local WaterPump = require(script.WaterPump)
 local Weather = require(script.Weather)
 
@@ -29,5 +30,6 @@ task.spawn(MissionDirector.start) -- waits for MB_BaseState
 Radiation.start()
 SolderStation.start()
 WaterPump.start()
+WaterBottles.start()
 
 print("[junior-astronaut] server started")
