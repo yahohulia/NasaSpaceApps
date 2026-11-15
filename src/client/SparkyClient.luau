@@ -1,18 +1,22 @@
 -- Sparky's dialog window (bottom of the screen, portrait on the left, typewriter text),
--- shown in the player's language. While it is open the mouse cursor is free (first person
--- locks it otherwise). The player picks one of three question buttons (shared/SparkyQuestions);
--- "Bye" / Esc / walking away ends the talk. Clicking the text shows the whole line at once.
--- An AI answer gets a small "made by AI" note under the text. Layout and colours follow the mock-up (image.png in the repo root):
--- two separate panels with a grey pixel bevel, teal fill, white mono text and a blinking ▼.
+-- shown in the player's language. Sparky is the radio link to Earth: the player types a
+-- question (or taps a quick question), Sparky checks it, sends it, and Earth's answer comes
+-- back after the signal delay (a countdown in game minutes). While the window is open the
+-- mouse cursor is free (first person locks it otherwise). "Bye" / Esc / walking away ends
+-- the talk. Clicking the text shows the whole line at once. Earth's AI answers get a small note.
+-- Layout and colours follow the mock-up (image.png in the repo root): two panels with a grey
+-- pixel bevel, teal fill and white mono text.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local SparkyQuestions = require(ReplicatedStorage.Shared.SparkyQuestions)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local CHARS_PER_SECOND = 40
 local TALK_DISTANCE = 14 -- the dialog closes when the player walks further away (server: 16)
+local MAX_CHARS = 120 -- same limit as the server
 
 -- Palette sampled from image.png: teal-green panels, grey pixel bevel, dark outline.
 local FILL = Color3.fromRGB(33, 55, 53)
@@ -20,8 +24,9 @@ local BEVEL = Color3.fromRGB(105, 105, 105)
 local OUTLINE = Color3.fromRGB(8, 9, 11)
 local TEXT = Color3.fromRGB(242, 247, 250)
 
-local HEIGHT = 200 -- whole dialog
-local SHOWN_QUESTIONS = 3
+local HEIGHT = 230 -- whole dialog
+local PORTRAIT = 160 -- square portrait panel
+local SHOWN_QUESTIONS = 2 -- quick question buttons (Ukrainian ones are long)
 local GAP = 6 -- between portrait and text panels
 local OUTLINE_PX = 2
 local BEVEL_PX = 4
@@ -32,8 +37,11 @@ type Dialog = {
 	gui: ScreenGui,
 	label: TextLabel,
 	note: TextLabel,
+	status: TextLabel,
 	box: TextButton,
 	questionButtons: { TextButton },
+	input: TextBox,
+	sendButton: TextButton,
 	byeButton: TextButton,
 }
 
@@ -160,15 +168,15 @@ local function makeDialog(rover: Model, lang: Strings.Lang): Dialog
 	box.BackgroundTransparency = 1
 	box.BorderSizePixel = 0
 	local limit = Instance.new("UISizeConstraint")
-	limit.MaxSize = Vector2.new(720, HEIGHT)
+	limit.MaxSize = Vector2.new(760, HEIGHT)
 	limit.Parent = box
 	box.Parent = gui
 
-	-- Square portrait panel on the left, text panel fills the rest.
-	local portrait = panel(box, "PortraitFrame", UDim2.fromOffset(HEIGHT, HEIGHT), UDim2.fromOffset(0, 0))
+	-- Square portrait panel on the left (bottom-aligned), text panel fills the rest.
+	local portrait = panel(box, "PortraitFrame", UDim2.fromOffset(PORTRAIT, PORTRAIT), UDim2.new(0, 0, 1, -PORTRAIT))
 	makePortrait(portrait, rover)
 
-	local textFill = panel(box, "TextFrame", UDim2.new(1, -(HEIGHT + GAP), 1, 0), UDim2.fromOffset(HEIGHT + GAP, 0))
+	local textFill = panel(box, "TextFrame", UDim2.new(1, -(PORTRAIT + GAP), 1, 0), UDim2.fromOffset(PORTRAIT + GAP, 0))
 	local padding = Instance.new("UIPadding")
 	padding.PaddingLeft = UDim.new(0, 14)
 	padding.PaddingRight = UDim.new(0, 14)
@@ -178,53 +186,95 @@ local function makeDialog(rover: Model, lang: Strings.Lang): Dialog
 
 	local label = Instance.new("TextLabel")
 	label.Name = "Text"
-	label.Size = UDim2.new(1, 0, 1, -92)
+	label.Size = UDim2.new(1, 0, 1, -88)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.RobotoMono
 	label.TextColor3 = TEXT
-	label.TextSize = 20
+	label.TextSize = 18
 	label.LineHeight = 1.15
 	label.TextWrapped = true
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.TextYAlignment = Enum.TextYAlignment.Top
 	label.Parent = textFill
 
-	-- Small grey note under an AI answer (Roblox marks AI text this way).
-	local note = Instance.new("TextLabel")
-	note.Name = "AiNote"
-	note.AnchorPoint = Vector2.new(0, 1)
-	note.Position = UDim2.new(0, 0, 1, -72)
-	note.Size = UDim2.new(1, 0, 0, 16)
-	note.BackgroundTransparency = 1
-	note.Font = Enum.Font.RobotoMono
+	-- Small grey line above the buttons: the AI note on the left, the countdown on the right.
+	local function smallLine(name: string, align: Enum.TextXAlignment): TextLabel
+		local t = Instance.new("TextLabel")
+		t.Name = name
+		t.AnchorPoint = Vector2.new(0, 1)
+		t.Position = UDim2.new(0, 0, 1, -68)
+		t.Size = UDim2.new(1, 0, 0, 16)
+		t.BackgroundTransparency = 1
+		t.Font = Enum.Font.RobotoMono
+		t.Text = ""
+		t.TextColor3 = Color3.fromRGB(160, 180, 178)
+		t.TextSize = 13
+		t.TextXAlignment = align
+		t.Visible = false
+		t.Parent = textFill
+		return t
+	end
+	local note = smallLine("AiNote", Enum.TextXAlignment.Left)
 	note.Text = "🤖 " .. Strings.get("sparky.ai.note", lang)
-	note.TextColor3 = Color3.fromRGB(160, 180, 178)
-	note.TextSize = 13
-	note.TextXAlignment = Enum.TextXAlignment.Left
-	note.Visible = false
-	note.Parent = textFill
+	local status = smallLine("Status", Enum.TextXAlignment.Right)
 
-	-- Question buttons and "Bye" at the bottom of the text panel; they wrap onto two rows.
-	local buttons = Instance.new("Frame")
-	buttons.Name = "Buttons"
-	buttons.AnchorPoint = Vector2.new(0, 1)
-	buttons.Position = UDim2.fromScale(0, 1)
-	buttons.Size = UDim2.new(1, 0, 0, 66)
-	buttons.BackgroundTransparency = 1
-	buttons.Parent = textFill
-	local row = Instance.new("UIListLayout")
-	row.FillDirection = Enum.FillDirection.Horizontal
-	row.Wraps = true
-	row.HorizontalAlignment = Enum.HorizontalAlignment.Left
-	row.VerticalAlignment = Enum.VerticalAlignment.Bottom
-	row.SortOrder = Enum.SortOrder.LayoutOrder
-	row.Padding = UDim.new(0, 6)
-	row.Parent = buttons
+	local function buttonRow(name: string, y: number, height: number): Frame
+		local frame = Instance.new("Frame")
+		frame.Name = name
+		frame.AnchorPoint = Vector2.new(0, 1)
+		frame.Position = UDim2.new(0, 0, 1, y)
+		frame.Size = UDim2.new(1, 0, 0, height)
+		frame.BackgroundTransparency = 1
+		frame.Parent = textFill
+		local row = Instance.new("UIListLayout")
+		row.FillDirection = Enum.FillDirection.Horizontal
+		row.VerticalAlignment = Enum.VerticalAlignment.Center
+		row.SortOrder = Enum.SortOrder.LayoutOrder
+		row.Padding = UDim.new(0, 6)
+		row.Parent = frame
+		return frame
+	end
+
+	-- Quick questions.
+	local quick = buttonRow("Quick", -36, 28)
 	local questionButtons = {}
 	for i = 1, SHOWN_QUESTIONS do
-		table.insert(questionButtons, dialogButton(buttons, "", i))
+		local b = dialogButton(quick, "", i)
+		b.Size = UDim2.fromOffset(0, 26)
+		b.TextSize = 14
+		table.insert(questionButtons, b)
 	end
-	local byeButton = dialogButton(buttons, Strings.get("sparky.bye", lang), SHOWN_QUESTIONS + 1)
+
+	-- Typed question + Send + Bye.
+	local inputRow = buttonRow("Input", 0, 30)
+	local input = Instance.new("TextBox")
+	input.Name = "Question"
+	input.LayoutOrder = 1
+	input.Size = UDim2.new(1, -230, 0, 30)
+	input.BackgroundColor3 = Color3.fromRGB(20, 34, 33)
+	input.BorderSizePixel = 0
+	input.ClearTextOnFocus = false
+	input.Font = Enum.Font.RobotoMono
+	input.PlaceholderText = Strings.get("sparky.chat.placeholder", lang)
+	input.PlaceholderColor3 = Color3.fromRGB(130, 150, 148)
+	input.Text = ""
+	input.TextColor3 = TEXT
+	input.TextSize = 16
+	input.TextXAlignment = Enum.TextXAlignment.Left
+	input.TextTruncate = Enum.TextTruncate.AtEnd
+	round(input, 5)
+	local inputPad = Instance.new("UIPadding")
+	inputPad.PaddingLeft = UDim.new(0, 8)
+	inputPad.PaddingRight = UDim.new(0, 8)
+	inputPad.Parent = input
+	local inputStroke = Instance.new("UIStroke")
+	inputStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	inputStroke.Color = BEVEL
+	inputStroke.Thickness = 2
+	inputStroke.Parent = input
+	input.Parent = inputRow
+	local sendButton = dialogButton(inputRow, Strings.get("sparky.chat.send", lang) .. " ▶", 2)
+	local byeButton = dialogButton(inputRow, Strings.get("sparky.bye", lang), 3)
 	byeButton.Modal = true -- frees the first-person mouse while the dialog is open
 
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -232,8 +282,11 @@ local function makeDialog(rover: Model, lang: Strings.Lang): Dialog
 		gui = gui,
 		label = label,
 		note = note,
+		status = status,
 		box = box,
 		questionButtons = questionButtons,
+		input = input,
+		sendButton = sendButton,
 		byeButton = byeButton,
 	}
 end
@@ -268,7 +321,8 @@ function SparkyClient.start()
 	local dialog = makeDialog(rover, lang)
 	local token = 0
 	local typingFor = 0 -- token of the line being typed (0 = none)
-	local waiting = false -- Sparky is "thinking" about an answer
+	local checking = false -- Sparky is checking a question
+	local answerAt = 0 -- os.clock() when Earth's answer is due (0 = nothing on the way)
 	local talk = ReplicatedStorage:WaitForChild("SparkyTalk", 30)
 
 	-- Questions not asked yet come first; an asked one moves to the end of the queue.
@@ -278,16 +332,22 @@ function SparkyClient.start()
 	end
 	local shown: { SparkyQuestions.Question } = {}
 
-	local function refreshQuestions()
+	local function canAsk(): boolean
+		return not checking and answerAt == 0
+	end
+
+	local function refreshButtons()
 		table.clear(shown)
 		for i, button in dialog.questionButtons do
 			local q = queue[i]
 			shown[i] = q
-			button.Visible = q ~= nil and not waiting
+			button.Visible = q ~= nil and canAsk()
 			if q then
 				button.Text = Strings.get(q.question, lang)
 			end
 		end
+		dialog.sendButton.Visible = canAsk()
+		dialog.input.TextEditable = canAsk()
 	end
 
 	local function setOpen(open: boolean)
@@ -303,18 +363,44 @@ function SparkyClient.start()
 			return
 		end
 		token += 1
-		waiting = false
+		dialog.input:ReleaseFocus()
 		setOpen(false)
 		if talk and talk:IsA("RemoteEvent") then
 			talk:FireServer("bye")
 		end
 	end
 
+	local function send(action: string, value: string)
+		if canAsk() and talk and talk:IsA("RemoteEvent") then
+			talk:FireServer(action, value)
+		end
+	end
+
+	local function sendTyped()
+		local text = string.sub((string.gsub(dialog.input.Text, "^%s+", "")), 1, MAX_CHARS)
+		if text == "" or not canAsk() then
+			return
+		end
+		dialog.input.Text = ""
+		send("chat", text)
+	end
+
 	dialog.byeButton.Activated:Connect(close)
+	dialog.sendButton.Activated:Connect(sendTyped)
+	dialog.input.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			sendTyped()
+		end
+	end)
+	dialog.input:GetPropertyChangedSignal("Text"):Connect(function()
+		if #dialog.input.Text > MAX_CHARS then
+			dialog.input.Text = string.sub(dialog.input.Text, 1, MAX_CHARS)
+		end
+	end)
 	for i, button in dialog.questionButtons do
 		button.Activated:Connect(function()
 			local q = shown[i]
-			if not q or waiting or not (talk and talk:IsA("RemoteEvent")) then
+			if not q or not canAsk() then
 				return
 			end
 			local index = table.find(queue, q)
@@ -322,7 +408,7 @@ function SparkyClient.start()
 				table.remove(queue, index)
 				table.insert(queue, q)
 			end
-			talk:FireServer("ask", q.id)
+			send("ask", q.id)
 		end)
 	end
 	dialog.box.Activated:Connect(function()
@@ -336,9 +422,21 @@ function SparkyClient.start()
 		end
 	end)
 
-	-- Close the dialog if the player walks away.
+	-- Countdown to Earth's answer (game minutes) and closing when the player walks away.
 	task.spawn(function()
 		while dialog.gui.Parent do
+			if answerAt > 0 then
+				local left = answerAt - os.clock()
+				if left <= 0 then
+					answerAt = 0
+					dialog.status.Visible = false
+					refreshButtons()
+				else
+					local minutes = math.max(1, math.ceil(left * 24 * 60 / Config.SolSeconds))
+					dialog.status.Text = Strings.get("sparky.chat.waiting", lang, { min = minutes })
+					dialog.status.Visible = true
+				end
+			end
 			if dialog.gui.Enabled then
 				local character = Players.LocalPlayer.Character
 				local root = character and character:FindFirstChild("HumanoidRootPart")
@@ -354,18 +452,27 @@ function SparkyClient.start()
 	if not (say and say:IsA("RemoteEvent")) then
 		return
 	end
-	-- keyOrText: an i18n key, or plain text (AI answers, EventDirector). kind: nil | "thinking" | "ai".
-	say.OnClientEvent:Connect(function(keyOrText: string, kind: string?)
+	-- keyOrText: an i18n key, or plain text (Earth's answers, EventDirector).
+	-- kind: nil | "thinking" | "sending" (extra = seconds until the answer) | "earth" (extra = AI wrote it).
+	say.OnClientEvent:Connect(function(keyOrText: string, kind: string?, extra: unknown)
 		token += 1
 		local myToken = token
-		local text = Strings.get(keyOrText, lang)
+		checking = kind == "thinking"
+		if kind == "sending" then
+			answerAt = os.clock() + (if typeof(extra) == "number" then extra else 0)
+		elseif kind == "earth" then
+			answerAt = 0
+			dialog.status.Visible = false
+		end
+		local text = if kind == "earth"
+			then Strings.get("sparky.chat.earth", lang, { text = keyOrText })
+			else Strings.get(keyOrText, lang)
 		local length = utf8.len(text) or #text
-		waiting = kind == "thinking"
-		dialog.note.Visible = kind == "ai"
+		dialog.note.Visible = kind == "earth" and extra == true
 		dialog.label.Text = text
-		refreshQuestions()
+		refreshButtons()
 		setOpen(true)
-		if waiting then
+		if checking then
 			dialog.label.MaxVisibleGraphemes = -1
 			return
 		end
