@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local CraftConfig = require(ReplicatedStorage.Shared.CraftConfig)
+local CropModels = require(ReplicatedStorage.Shared.CropModels)
 local Strings = require(ReplicatedStorage.Shared.Strings)
 
 local CraftClient = {}
@@ -164,6 +165,7 @@ function CraftClient.start()
 	end
 
 	local bagView: Instance? = nil
+	local cropView: Instance? = nil
 	local function renderInventory()
 		table.clear(spinning)
 		for _, child in inv:GetChildren() do
@@ -182,8 +184,35 @@ function CraftClient.start()
 		for i = 1, num(player, "CarryParts") do
 			partIcon(slot(100 + i, true, Color3.fromRGB(30, 44, 70)))
 		end
+		-- seed packets and harvest from the greenhouse (Player.CropBag, server: Crops.luau)
+		if cropView then
+			local crops = {}
+			for _, item in cropView:GetChildren() do
+				if item:IsA("StringValue") then
+					table.insert(crops, item)
+				end
+			end
+			table.sort(crops, function(a, b)
+				return num(a, "Order") < num(b, "Order")
+			end)
+			for i, item in crops do
+				local seed = item.Name == "Seed"
+				local tint = if seed then Color3.fromRGB(44, 40, 30) else Color3.fromRGB(32, 50, 34)
+				local model = if seed then CropModels.packet(item.Value) else CropModels.produce(item.Value, i)
+				showInSlot(slot(200 + i, true, tint), model)
+			end
+		end
 	end
 	player:GetAttributeChangedSignal("CarryParts"):Connect(renderInventory)
+	task.spawn(function()
+		local folder = player:WaitForChild("CropBag", 60)
+		if folder then
+			cropView = folder
+			folder.ChildAdded:Connect(renderInventory)
+			folder.ChildRemoved:Connect(renderInventory)
+			renderInventory()
+		end
+	end)
 	renderInventory()
 	task.spawn(function()
 		local folder = player:WaitForChild("SampleBag", 30)
