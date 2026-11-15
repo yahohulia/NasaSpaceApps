@@ -4,8 +4,7 @@
 -- while wearing it. The airlock doors use it: the outer door lets out only suited
 -- players, the inner door lets in only players without the suit (Studio scripts
 -- MB_Doors, MB_AirlockDoorsServer, MB_SuitBarrierServer).
--- If a player is outside without a suit anyway, the crew pulls them back into the
--- airlock after a few seconds (no death: kids 7-12).
+-- No teleports: a player is never moved back to the airlock or the spawn.
 -- Looks: white suit colours instead of the avatar's clothes, plus the helmet and
 -- backpack models from ServerStorage.SuitParts (built in Studio, not in git).
 -- Suit oxygen itself is MB_ResourceServer's job (Player attribute "SuitO2").
@@ -19,14 +18,11 @@ local Notice = require(script.Parent.Notice)
 
 local LOCKER_TAG = "SuitLocker"
 local HOLD_SECONDS = 1.2
-local RESCUE_SECONDS = 3 -- outside without a suit for this long -> back to the airlock
 local SUIT_COLOR = Color3.fromRGB(236, 238, 242)
 local HELMET_SCALE = 1.65 -- helmet height = head height * this
 local PACK_SCALE = 1.05 -- backpack height = torso height * this
 
 local Suit = {}
-
-local outsideSince: { [Player]: number } = {}
 
 local function suitPart(name: string): Model?
 	local folder = ServerStorage:FindFirstChild("SuitParts")
@@ -174,38 +170,6 @@ local function bindLocker(part: Instance)
 	prompt.Parent = part
 end
 
--- The airlock's inside landing spot (where the crew brings a player back).
-local function rescueSpot(): BasePart?
-	local base = workspace:FindFirstChild("Base")
-	local habitat = base and base:FindFirstChild("Habitat")
-	local airlock = habitat and habitat:FindFirstChild("Airlock")
-	local spot = airlock and airlock:FindFirstChild("InsideSpot")
-	return if spot and spot:IsA("BasePart") then spot else nil
-end
-
-local function checkOutside()
-	local now = os.clock()
-	for _, player in Players:GetPlayers() do
-		-- "Indoors" comes from Radiation (floor under the player belongs to a Shelter).
-		local outside = player:GetAttribute("Indoors") == false
-		if outside and not Suit.isOn(player) and player.Character then
-			local since = outsideSince[player]
-			if not since then
-				outsideSince[player] = now
-			elseif now - since >= RESCUE_SECONDS then
-				outsideSince[player] = nil
-				local spot = rescueSpot()
-				if spot then
-					player.Character:PivotTo(spot.CFrame + Vector3.new(0, 3, 0))
-				end
-				Notice.send(player, "suit.rescued", "alert")
-			end
-		else
-			outsideSince[player] = nil
-		end
-	end
-end
-
 function Suit.start()
 	for _, part in CollectionService:GetTagged(LOCKER_TAG) do
 		bindLocker(part)
@@ -222,16 +186,6 @@ function Suit.start()
 	for _, player in Players:GetPlayers() do
 		onPlayer(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		outsideSince[player] = nil
-	end)
-
-	task.spawn(function()
-		while true do
-			task.wait(0.5)
-			checkOutside()
-		end
-	end)
 end
 
 return Suit
