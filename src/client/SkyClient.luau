@@ -141,8 +141,15 @@ function SkyClient.start()
 		end
 
 		Lighting.Brightness = brightness
-		Lighting.Ambient = p.ambient
-		Lighting.OutdoorAmbient = p.outdoorAmbient
+		-- BaseLightsClient darkens the ambients inside the base (local attributes, default 1).
+		local ambientScale = Lighting:GetAttribute("AmbientScale")
+		Lighting.Ambient = if type(ambientScale) == "number"
+			then p.ambient:Lerp(Color3.new(), 1 - ambientScale)
+			else p.ambient
+		local outdoorScale = Lighting:GetAttribute("OutdoorAmbientScale")
+		Lighting.OutdoorAmbient = if type(outdoorScale) == "number"
+			then p.outdoorAmbient:Lerp(Color3.new(), 1 - outdoorScale)
+			else p.outdoorAmbient
 		atmosphere.Density = density
 		atmosphere.Offset = p.offset
 		atmosphere.Color = color
