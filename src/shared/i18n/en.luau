@@ -293,7 +293,7 @@ return {
 	["mission.obj.radar"] = "Repair the radar",
 	["mission.obj.oxygen"] = "Fix the oxygen generator",
 	["mission.obj.harvest"] = "Harvest a crop",
-	["mission.obj.allSamples"] = "Collect all the rock samples",
+	["mission.obj.allSamples"] = "Collect 10 rock samples in all",
 	["mission.obj.launch"] = "Launch the rocket home",
 	["mission.debrief.title"] = "Sol {n} is over",
 	["mission.debrief.emergency"] = "Earth sent emergency supplies: {n} time(s). It cost us hours.",

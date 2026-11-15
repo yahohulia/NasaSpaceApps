@@ -37,6 +37,7 @@ MissionPlan.JITTER_HOURS = 1 -- game value, TODO balance: scheduled events move 
 MissionPlan.EMERGENCY_HOURS = 4 -- game value, TODO balance: emergency supplies cost this many game hours
 MissionPlan.EMERGENCY_REFILL = 50 -- game value, TODO balance: air / water / food are raised to at least this
 MissionPlan.SOL3_SAMPLES = 3 -- game value, TODO balance: samples to collect on sol 3
+MissionPlan.MISSION_SAMPLES = 10 -- game value, TODO balance: samples for the whole mission (sol 5); one full bag
 
 MissionPlan.sols = {
 	sol(1, nil, { obj("outside", "do"), obj("ice", "do"), obj("plant", "do") }),

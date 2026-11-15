@@ -293,7 +293,7 @@ return {
 	["mission.obj.radar"] = "Полагодь радар",
 	["mission.obj.oxygen"] = "Полагодь генератор кисню",
 	["mission.obj.harvest"] = "Збери врожай",
-	["mission.obj.allSamples"] = "Збери всі зразки каміння",
+	["mission.obj.allSamples"] = "Збери 10 зразків каміння за місію",
 	["mission.obj.launch"] = "Запусти ракету додому",
 	["mission.debrief.title"] = "Сол {n} завершено",
 	["mission.debrief.emergency"] = "Земля надсилала аварійний запас: {n} раз(и). Це коштувало годин.",

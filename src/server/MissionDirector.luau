@@ -52,6 +52,27 @@ local function num(inst: Instance, name: string): number
 	return if typeof(v) == "number" then v else 0
 end
 
+-- Rock samples: Crafting's Workspace.Samples (children with a SampleKind attribute, Collected = true once
+-- picked up). MB_Missions' own counter is the fallback when that folder is missing.
+local function samples(baseState: Instance): (number, number)
+	local folder = workspace:FindFirstChild("Samples")
+	if folder then
+		local got, total = 0, 0
+		for _, sample in folder:GetChildren() do
+			if typeof(sample:GetAttribute("SampleKind")) == "string" then
+				total += 1
+				if sample:GetAttribute("Collected") == true then
+					got += 1
+				end
+			end
+		end
+		if total > 0 then
+			return got, total
+		end
+	end
+	return num(baseState, "SamplesCollected"), num(baseState, "SamplesTotal")
+end
+
 -- Game minutes -> real seconds (a sol is 24 game hours of Config.SolSeconds real seconds).
 local function gameMinutes(minutes: number): number
 	return minutes * 60 * Config.SolSeconds / (24 * 60 * 60)
@@ -144,7 +165,7 @@ function MissionDirector.start()
 		table.clear(broken)
 		emergencies = 0
 		panelsWereDirty, radarWasBroken, o2WasBroken = false, false, false
-		samplesAtStart = num(baseState, "SamplesCollected")
+		samplesAtStart = samples(baseState)
 		table.clear(iceSeen)
 		for _, player in Players:GetPlayers() do
 			iceSeen[player] = num(player, "Ice")
@@ -267,7 +288,8 @@ function MissionDirector.start()
 		if num(baseState, "Power") <= 0 and inSol("power") then
 			broken.power = true
 		end
-		if num(baseState, "SamplesCollected") - samplesAtStart >= MissionPlan.SOL3_SAMPLES then
+		local got, total = samples(baseState)
+		if got - samplesAtStart >= MissionPlan.SOL3_SAMPLES then
 			mark("samples")
 		end
 		if baseState:GetAttribute("RadarOK") == false then
@@ -280,8 +302,7 @@ function MissionDirector.start()
 		elseif o2WasBroken then
 			mark("oxygen")
 		end
-		local total = num(baseState, "SamplesTotal")
-		if total > 0 and num(baseState, "SamplesCollected") >= total then
+		if total > 0 and got >= math.min(total, MissionPlan.MISSION_SAMPLES) then
 			mark("allSamples")
 		end
 		if baseState:GetAttribute("Launched") == true then
